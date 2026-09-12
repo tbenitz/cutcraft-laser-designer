@@ -2,16 +2,26 @@
 
 Browser-based laser design studio. Draw shapes, generate outlined text, trace images, add holding bridges, preview material fallout, and export a millimeter-accurate SVG for laser software such as LaserPecker Design Space.
 
-## Use it
+**Repo:** https://github.com/tbenitz/cutcraft-laser-designer
 
-Open `index.html` in a modern browser. No build step and no server are required. Work stays local; projects autosave in the browser.
+## Run it
 
-To run it on GitHub Pages:
+The designer is a single HTML file. Open `CutCraft_Laser_Designer.html` in Chrome, Edge, or Firefox. No server or build step is required. Projects autosave in the browser.
 
-1. Repo **Settings** → **Pages**
+If that file is not in the repo yet, add it from the GitHub UI:
+
+1. **Add file → Upload files**
+2. Drop `CutCraft_Laser_Designer.html`
+3. Commit to `main`
+
+## GitHub Pages
+
+1. Repo **Settings → Pages**
 2. Source: **Deploy from a branch**
 3. Branch: `main` / root
-4. Save, then visit `https://tbenitz.github.io/cutcraft-laser-designer/`
+4. After the HTML app is in the repo, point Pages at that file or rename it to `index.html`
+
+Live URL once Pages is on: https://tbenitz.github.io/cutcraft-laser-designer/
 
 ## Features
 
@@ -22,9 +32,5 @@ To run it on GitHub Pages:
 - Material preview that shows loose pieces after cut fallout
 - Preflight checks and color-separated SVG export (black engrave, blue score, red cut)
 - 30 starting templates (coasters, tags, signs, ornaments, and more)
-
-## Files
-
-- `index.html` — full CutCraft app (HTML, CSS, and JavaScript in one file)
 
 Export uses an SVG `viewBox` in millimeters and inline geometry. Import the file into your laser software as vector format and confirm material settings before cutting.

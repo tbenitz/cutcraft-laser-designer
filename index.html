@@ -5,25 +5,27 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>CutCraft — Laser SVG Designer</title>
   <style>
-    html,body{height:100%;margin:0;background:#101318;color:#f5f7fa;font-family:Inter,system-ui,sans-serif}
-    .boot{display:grid;place-items:center;height:100%;text-align:center}
-    .boot p{color:#98a2b3}
+    :root{font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:#f5f7fa;background:#101318}
+    body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 20% 10%,#1d263155,transparent 36%),#101318}
+    main{width:min(640px,92vw);border:1px solid #2b323e;background:#171b22;border-radius:16px;padding:28px;box-shadow:0 18px 50px #0008}
+    h1{margin:0 0 6px;letter-spacing:-.03em}
+    p{color:#98a2b3;line-height:1.55}
+    a{color:#ffb547}
+    code{background:#0f1318;border:1px solid #2b323e;border-radius:6px;padding:1px 6px}
+    ol{color:#cbd2dc;line-height:1.6}
   </style>
 </head>
 <body>
-  <div class="boot" id="boot"><div><h1>CutCraft</h1><p>Loading designer…</p></div></div>
-  <script>
-    const parts = ["part-00.txt","part-01.txt","part-02.txt","part-03.txt","part-04.txt","part-05.txt","part-06.txt","part-07.txt","part-08.txt","part-09.txt","part-10.txt","part-11.txt","part-12.txt","part-13.txt"];
-    Promise.all(parts.map(name => fetch("parts/" + name).then(r => {
-      if (!r.ok) throw new Error("Missing " + name);
-      return r.text();
-    }))).then(chunks => {
-      document.open();
-      document.write(chunks.join(""));
-      document.close();
-    }).catch(err => {
-      document.getElementById("boot").innerHTML = "<div><h1>CutCraft</h1><p>Could not load the designer. Use GitHub Pages or a local static server so the part files can be fetched.</p><p>" + err.message + "</p></div>";
-    });
-  </script>
+  <main>
+    <h1>CutCraft</h1>
+    <p>Laser SVG studio for outlined text, image tracing, holding bridges, and material fallout preview.</p>
+    <p>Repository: <a href="https://github.com/tbenitz/cutcraft-laser-designer">tbenitz/cutcraft-laser-designer</a></p>
+    <p>The full single-file app is <code>CutCraft_Laser_Designer.html</code>. Open that file in a browser to run it locally — no build step.</p>
+    <ol>
+      <li>Open the repo and choose <b>Add file → Upload files</b></li>
+      <li>Drop <code>CutCraft_Laser_Designer.html</code></li>
+      <li>Optional: rename it to <code>app.html</code> and turn on GitHub Pages from <code>main</code></li>
+    </ol>
+  </main>
 </body>
 </html>
