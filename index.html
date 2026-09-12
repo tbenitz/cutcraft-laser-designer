@@ -2,30 +2,1211 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+  <meta name="color-scheme" content="dark">
   <title>CutCraft — Laser SVG Designer</title>
   <style>
-    :root{font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:#f5f7fa;background:#101318}
-    body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 20% 10%,#1d263155,transparent 36%),#101318}
-    main{width:min(640px,92vw);border:1px solid #2b323e;background:#171b22;border-radius:16px;padding:28px;box-shadow:0 18px 50px #0008}
-    h1{margin:0 0 6px;letter-spacing:-.03em}
-    p{color:#98a2b3;line-height:1.55}
-    a{color:#ffb547}
-    code{background:#0f1318;border:1px solid #2b323e;border-radius:6px;padding:1px 6px}
-    ol{color:#cbd2dc;line-height:1.6}
+    :root{
+      --bg:#101318;--panel:#171b22;--panel2:#1d222b;--panel3:#222832;
+      --line:#2b323e;--line2:#374151;--text:#f5f7fa;--muted:#98a2b3;
+      --soft:#cbd2dc;--accent:#ffb547;--accent2:#ff8f3d;--cyan:#5cd6d0;
+      --cut:#ff5d67;--score:#50a7ff;--engrave:#20242b;--good:#4fd18b;
+      --warn:#f5b940;--bad:#ff6b6b;--radius:12px;--shadow:0 18px 50px #0008;
+      --top:58px;--sub:46px;--status:28px;--tools:64px;--side:326px;
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    *{box-sizing:border-box}
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--text)}
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{border:0}
+    .app{display:grid;grid-template-rows:var(--top) var(--sub) minmax(0,1fr) var(--status);height:100vh;min-width:820px}
+    .topbar{display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line);background:#14181ecc;backdrop-filter:blur(14px);z-index:20}
+    .brand{display:flex;align-items:center;gap:10px;min-width:210px}
+    .brandmark{width:34px;height:34px;border-radius:10px;background:linear-gradient(145deg,var(--accent),var(--accent2));display:grid;place-items:center;box-shadow:0 6px 18px #ff9d3c3c;color:#251609}
+    .brandmark svg{width:21px;height:21px;stroke-width:2.2}
+    .brandname{font-size:15px;font-weight:780;letter-spacing:-.02em;line-height:1}
+    .brandname small{display:block;color:var(--muted);font-size:9px;letter-spacing:.13em;text-transform:uppercase;margin-top:4px;font-weight:700}
+    .project-name{width:min(250px,19vw);height:34px;background:transparent;border:1px solid transparent;border-radius:8px;padding:0 10px;font-weight:650;outline:0}
+    .project-name:hover,.project-name:focus{border-color:var(--line2);background:var(--panel)}
+    .spacer{flex:1}
+    .divider{width:1px;height:24px;background:var(--line);margin:0 2px}
+    .btn,.iconbtn,.toolbtn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);height:34px;padding:0 11px;cursor:pointer;transition:.16s ease;white-space:nowrap;font-size:12px;font-weight:680}
+    .btn:hover,.iconbtn:hover,.toolbtn:hover{background:var(--panel3);border-color:#465164;transform:translateY(-1px)}
+    .btn:active,.iconbtn:active,.toolbtn:active{transform:translateY(0)}
+    .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#221507;box-shadow:0 5px 16px #ff9a3c2c}
+    .btn.primary:hover{filter:brightness(1.07)}
+    .btn.ghost{background:transparent}.btn.danger{color:#ff858b}.btn.compact{height:30px;padding:0 9px}
+    .iconbtn{width:34px;padding:0}.iconbtn svg,.btn svg,.toolbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .iconbtn:disabled,.btn:disabled{opacity:.36;cursor:not-allowed;transform:none}
+    .subbar{display:flex;align-items:center;gap:8px;padding:0 12px 0 76px;background:var(--panel);border-bottom:1px solid var(--line);z-index:15}
+    .view-toggle{display:flex;background:#11151a;border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px}
+    .view-toggle button{height:28px;padding:0 12px;background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;font-size:11px;font-weight:760}
+    .view-toggle button.active{background:var(--panel3);color:var(--text);box-shadow:0 2px 8px #0005}
+    .sub-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;font-weight:750;margin-left:4px}
+    .zoom-readout{width:58px;text-align:center;font-size:11px;color:var(--soft);font-variant-numeric:tabular-nums}
+    .main{display:grid;grid-template-columns:var(--tools) minmax(0,1fr) var(--side);min-height:0;position:relative}
+    .toolbar{background:#14181e;border-right:1px solid var(--line);padding:9px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;z-index:10;overflow-y:auto;overflow-x:hidden}
+    .toolbtn{width:46px;height:42px;padding:0;flex-direction:column;gap:2px;background:transparent;color:var(--muted);border-color:transparent;border-radius:9px;font-size:8px;font-weight:720}
+    .toolbtn svg{width:19px;height:19px}.toolbtn:hover{transform:none;color:var(--text);background:var(--panel2);border-color:var(--line)}
+    .toolbtn.active{color:#241709;background:linear-gradient(145deg,var(--accent),var(--accent2));border-color:transparent;box-shadow:0 5px 14px #ff973533}
+    .tool-sep{width:32px;height:1px;background:var(--line);margin:3px 0}
+    .stage-wrap{min-width:0;min-height:0;position:relative;background:#0d1014;overflow:hidden}
+    .stage{position:absolute;inset:0;overflow:hidden;touch-action:none;background-color:#0e1116;background-image:radial-gradient(circle at 22% 15%,#1d263122 0,transparent 38%),radial-gradient(circle at 83% 80%,#33221720 0,transparent 38%)}
+    #editorSvg{width:100%;height:100%;display:block;user-select:none;outline:none}
+    .artboard{fill:#f1e7d3;filter:drop-shadow(0 16px 22px #0008)}
+    .artboard-edge{fill:none;stroke:#ffffff55;stroke-width:.25;vector-effect:non-scaling-stroke}
+    .grid-major{opacity:.42}.grid-minor{opacity:.18}
+    .selection-box{fill:none;stroke:#3cc9ff;stroke-width:1.25;vector-effect:non-scaling-stroke;stroke-dasharray:5 3;pointer-events:none}
+    .selection-handle{fill:#f8fbff;stroke:#168fcb;stroke-width:1;vector-effect:non-scaling-stroke;cursor:nwse-resize}
+    .selection-handle[data-handle="ne"],.selection-handle[data-handle="sw"]{cursor:nesw-resize}
+    .rotate-handle{fill:var(--accent);stroke:#704210;stroke-width:1;vector-effect:non-scaling-stroke;cursor:grab}
+    .rotation-line{stroke:#3cc9ff;stroke-width:1;vector-effect:non-scaling-stroke;pointer-events:none}
+    .drawing-preview{fill:#5cd6d018;stroke:var(--cyan);stroke-width:1;vector-effect:non-scaling-stroke;stroke-dasharray:4 3;pointer-events:none}
+    .bridge-body{fill:#4fd18b45;stroke:#239e64;stroke-width:1;vector-effect:non-scaling-stroke}
+    .bridge-center{stroke:#b8ffda;stroke-width:1;vector-effect:non-scaling-stroke;stroke-dasharray:3 2;pointer-events:none}
+    .bridge-label{fill:#d4ffe7;stroke:#102a1d;stroke-width:.5;paint-order:stroke;vector-effect:non-scaling-stroke;font-size:2px;font-weight:850;letter-spacing:.08em;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+    .empty-state{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;transition:.2s}
+    .empty-state.hidden{opacity:0;visibility:hidden}
+    .empty-card{pointer-events:auto;width:min(580px,75%);border:1px solid #ffffff14;background:#171b22e8;backdrop-filter:blur(14px);border-radius:18px;padding:25px;box-shadow:var(--shadow);text-align:center}
+    .empty-card h2{margin:0 0 8px;font-size:22px;letter-spacing:-.03em}.empty-card p{margin:0 auto 19px;color:var(--muted);line-height:1.55;font-size:13px;max-width:470px}
+    .quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+    .quick-card{padding:13px 8px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--soft);cursor:pointer;font-size:11px;font-weight:720}
+    .quick-card:hover{border-color:#556174;background:var(--panel3);color:white}
+    .quick-card span{display:block;font-size:22px;margin-bottom:5px}
+    .preview-pane{position:absolute;inset:0;background:#0c0f13;display:flex;align-items:center;justify-content:center;padding:42px;overflow:auto}
+    .preview-pane[hidden]{display:none}
+    .preview-board{position:relative;box-shadow:0 24px 60px #000a;border:1px solid #ffffff24;line-height:0;background-color:#d8d8d8;background-image:linear-gradient(45deg,#b9bec5 25%,transparent 25%),linear-gradient(-45deg,#b9bec5 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#b9bec5 75%),linear-gradient(-45deg,transparent 75%,#b9bec5 75%);background-size:18px 18px;background-position:0 0,0 9px,9px -9px,-9px 0}
+    #simCanvas{display:block;max-width:none;max-height:none;image-rendering:auto}
+    .preview-hud{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:#171b22e8;border:1px solid var(--line);border-radius:10px;padding:7px 10px;box-shadow:0 10px 30px #0006;z-index:3;white-space:nowrap}
+    .preview-hud .stat{font-size:11px;color:var(--soft)}.preview-hud strong{color:white}
+    .seg{display:flex;padding:2px;border:1px solid var(--line);border-radius:7px;background:#11151a}
+    .seg button{height:25px;border-radius:5px;padding:0 9px;background:transparent;color:var(--muted);cursor:pointer;font-size:10px;font-weight:750}
+    .seg button.active{background:var(--panel3);color:white}
+    .sim-busy{position:absolute;inset:0;display:grid;place-items:center;background:#0c0f13aa;z-index:4;color:var(--soft);font-size:12px;backdrop-filter:blur(3px)}
+    .sim-busy[hidden]{display:none}.spinner{width:22px;height:22px;border:2px solid #ffffff26;border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 8px}@keyframes spin{to{transform:rotate(1turn)}}
+    .sidepanel{background:var(--panel);border-left:1px solid var(--line);min-height:0;display:flex;flex-direction:column;z-index:10}
+    .side-tabs{height:44px;display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--line);padding:6px 8px 0;gap:3px}
+    .side-tabs button{background:transparent;border-radius:7px 7px 0 0;color:var(--muted);cursor:pointer;font-size:10px;font-weight:780;text-transform:uppercase;letter-spacing:.07em;border-bottom:2px solid transparent}
+    .side-tabs button.active{color:var(--text);border-bottom-color:var(--accent);background:#ffffff05}
+    .side-content{min-height:0;overflow:auto;padding:12px}.side-view[hidden]{display:none}
+    .section{border:1px solid var(--line);border-radius:11px;background:#14181f;margin-bottom:10px;overflow:hidden}
+    .section-title{height:36px;padding:0 11px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);font-size:10px;text-transform:uppercase;letter-spacing:.09em;font-weight:800;color:var(--soft)}
+    .section-body{padding:11px}.section-note{font-size:10px;line-height:1.45;color:var(--muted)}
+    .field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}.field:last-child{margin-bottom:0}
+    .field label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:750;display:flex;justify-content:space-between}
+    .field input,.field select,.field textarea{width:100%;background:#0f1318;border:1px solid var(--line);border-radius:7px;outline:0;padding:0 9px;font-size:11px;color:var(--text)}
+    .field input,.field select{height:32px}.field textarea{padding:8px;min-height:65px;resize:vertical;line-height:1.45}
+    .field input:focus,.field select:focus,.field textarea:focus{border-color:#5b728e;box-shadow:0 0 0 2px #5cd6d012}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.field-row.three{grid-template-columns:repeat(3,1fr)}
+    .suffix{position:relative}.suffix input{padding-right:29px}.suffix span{position:absolute;right:8px;bottom:8px;color:#697586;font-size:9px;pointer-events:none}
+    .checkrow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0;font-size:11px;color:var(--soft)}
+    .switch{width:32px;height:18px;border-radius:20px;background:#353c48;position:relative;cursor:pointer;flex:none}.switch:after{content:"";position:absolute;width:14px;height:14px;left:2px;top:2px;border-radius:50%;background:#9aa4b2;transition:.18s}.switch.on{background:#2d7e78}.switch.on:after{left:16px;background:#9df5eb}
+    .op-picker{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+    .op-btn{height:34px;border:1px solid var(--line);border-radius:7px;background:#10141a;color:var(--muted);cursor:pointer;font-size:9px;font-weight:780}
+    .op-btn.active[data-op="cut"]{border-color:var(--cut);color:#ff9aa0;background:#ff5d6712}.op-btn.active[data-op="score"]{border-color:var(--score);color:#91c9ff;background:#50a7ff12}.op-btn.active[data-op="engrave"]{border-color:#aeb7c3;color:white;background:#ffffff0b}
+    .action-row{display:flex;gap:6px;flex-wrap:wrap}.action-row .btn{flex:1;min-width:70px}
+    .layer-list{display:flex;flex-direction:column;gap:5px}.layer-row{display:grid;grid-template-columns:23px minmax(0,1fr) 27px 27px;align-items:center;min-height:41px;border:1px solid var(--line);background:#12161c;border-radius:8px;padding:3px 4px;cursor:pointer}
+    .layer-row:hover{background:#1c222b}.layer-row.selected{border-color:#3e9ac5;background:#173040}.layer-icon{display:grid;place-items:center}.layer-dot{width:9px;height:9px;border-radius:50%}.layer-main{min-width:0}.layer-name{font-size:10px;font-weight:680;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.layer-meta{font-size:8px;color:var(--muted);text-transform:uppercase;margin-top:2px;letter-spacing:.06em}
+    .mini-icon{width:25px;height:25px;border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center}.mini-icon:hover{background:var(--panel3);color:white}.mini-icon svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8}
+    .legend{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:10px}.legend-item{border:1px solid var(--line);border-radius:8px;padding:8px;background:#12161c}.legend-item b{display:flex;align-items:center;gap:6px;font-size:9px}.legend-item small{font-size:8px;color:var(--muted)}
+    .preflight-list{display:flex;flex-direction:column;gap:6px}.check-item{display:grid;grid-template-columns:20px 1fr;gap:7px;padding:8px;border-radius:8px;border:1px solid var(--line);background:#12161c}.check-icon{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:900}.check-item.pass .check-icon{color:var(--good);background:#4fd18b16}.check-item.warn .check-icon{color:var(--warn);background:#f5b94016}.check-item.error .check-icon{color:var(--bad);background:#ff6b6b16}.check-item b{font-size:10px;display:block;margin-bottom:2px}.check-item p{font-size:9px;color:var(--muted);line-height:1.4;margin:0}
+    .statusbar{display:flex;align-items:center;gap:15px;padding:0 11px;background:#11151a;border-top:1px solid var(--line);color:var(--muted);font-size:9px;font-variant-numeric:tabular-nums;z-index:20}
+    .statusbar .right{margin-left:auto;display:flex;gap:15px}.status-dot{width:6px;height:6px;border-radius:50%;background:var(--good);display:inline-block;margin-right:5px;box-shadow:0 0 7px #4fd18b80}
+    .toast-wrap{position:absolute;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:50;pointer-events:none}.toast{min-width:240px;max-width:360px;background:#1d232cf2;border:1px solid #3a4554;border-radius:10px;box-shadow:0 14px 35px #0009;padding:11px 13px;font-size:11px;line-height:1.45;color:var(--soft);animation:toastIn .22s ease}.toast b{color:white}.toast.good{border-left:3px solid var(--good)}.toast.warn{border-left:3px solid var(--warn)}.toast.bad{border-left:3px solid var(--bad)}@keyframes toastIn{from{opacity:0;transform:translateY(8px)}}
+    .modal-backdrop{position:fixed;inset:0;background:#06080bb8;backdrop-filter:blur(7px);z-index:100;display:grid;place-items:center;padding:25px}.modal-backdrop[hidden]{display:none}.modal{width:min(760px,94vw);max-height:90vh;background:var(--panel);border:1px solid #3b4553;border-radius:16px;box-shadow:0 30px 90px #000c;overflow:hidden}.modal.small{width:min(510px,94vw)}.modal.wide{width:min(1050px,96vw)}
+    .modal-head{height:56px;padding:0 18px;display:flex;align-items:center;border-bottom:1px solid var(--line)}.modal-head h2{font-size:15px;margin:0;letter-spacing:-.01em}.modal-head p{font-size:9px;color:var(--muted);margin:3px 0 0}.modal-head .iconbtn{margin-left:auto}.modal-body{padding:17px;overflow:auto;max-height:calc(90vh - 122px)}.modal-foot{height:66px;border-top:1px solid var(--line);padding:0 17px;display:flex;align-items:center;justify-content:flex-end;gap:8px;background:#14181e}
+    .catalog-tools{display:grid;grid-template-columns:minmax(180px,1fr) 190px;gap:9px;margin-bottom:11px}.template-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:15px;max-height:430px;overflow:auto;padding-right:3px}.template-card{border:1px solid var(--line);border-radius:11px;padding:10px;background:#12161c;cursor:pointer;text-align:left;color:var(--soft);min-height:122px}.template-card:hover{background:#1c222b;border-color:#4b586b}.template-card.active{border-color:var(--accent);box-shadow:0 0 0 2px #ffb54715;background:#2c241a}.template-art{height:45px;border-radius:7px;margin-bottom:8px;display:grid;place-items:center;background:#0c1014;color:var(--accent);font-size:25px;font-weight:800}.template-art svg{width:42px;height:42px;fill:none;stroke:currentColor;stroke-width:1.2}.template-card b{display:block;font-size:10px;color:white;margin-bottom:3px}.template-card small{font-size:8px;color:var(--muted);line-height:1.35;display:block}.template-empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:42px;border:1px dashed var(--line);border-radius:11px;font-size:11px}
+    .font-preview{min-height:54px;display:flex;align-items:center;padding:8px 12px;margin-bottom:11px;border:1px solid var(--line);border-radius:9px;background:#f4ead7;color:#17130f;font-size:26px;overflow:hidden;white-space:nowrap}.choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px}.choice-card{border:1px solid var(--line);border-radius:9px;background:#10141a;padding:9px;cursor:pointer;color:var(--muted);font-size:9px;line-height:1.35}.choice-card.active{border-color:var(--accent);background:#2c241a;color:#ffe1b1}.choice-card b{display:block;color:white;font-size:10px;margin-bottom:2px}
+    .image-studio{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(250px,.75fr);gap:14px}.image-work{min-width:0}.drop-zone{height:88px;border:1px dashed #536175;border-radius:11px;background:#10141a;display:grid;place-items:center;text-align:center;color:var(--muted);cursor:pointer;padding:12px;margin-bottom:10px}.drop-zone:hover,.drop-zone.drag{border-color:var(--accent);background:#2b241a;color:white}.drop-zone b{display:block;color:white;font-size:11px;margin-bottom:4px}.drop-zone small{font-size:9px}.trace-canvases{display:grid;grid-template-columns:1fr 1fr;gap:8px}.trace-pane{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#0b0e12}.trace-pane header{height:28px;padding:0 9px;display:flex;align-items:center;justify-content:space-between;background:#151a21;color:var(--muted);font-size:8px;text-transform:uppercase;letter-spacing:.08em}.trace-pane canvas{display:block;width:100%;height:245px;object-fit:contain;background-color:#e8e8e8;background-image:linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%);background-size:14px 14px;background-position:0 0,0 7px,7px -7px,-7px 0}.trace-controls{border:1px solid var(--line);border-radius:11px;background:#12161c;padding:11px}.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:11px}.mode-btn{height:45px;border:1px solid var(--line);border-radius:8px;background:#0e1217;color:var(--muted);cursor:pointer;font-size:9px;font-weight:760}.mode-btn.active{border-color:var(--cyan);color:#c4fffb;background:#14312f}.range-field{margin-bottom:9px}.range-field label{display:flex;justify-content:space-between;font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}.range-field input{width:100%;accent-color:var(--accent)}.trace-stats{display:flex;gap:8px;color:var(--muted);font-size:9px;margin-top:8px}.trace-stats b{color:white}.busy-note{color:var(--accent);font-size:9px}.offline-pill{display:inline-flex;align-items:center;gap:5px;color:#9df5c3;background:#173024;border:1px solid #315a43;border-radius:20px;padding:3px 7px;font-size:8px;font-weight:760}.offline-pill:before{content:"";width:5px;height:5px;border-radius:50%;background:var(--good)}
+    .export-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:14px}.summary-tile{border:1px solid var(--line);background:#11151a;border-radius:9px;padding:10px}.summary-tile small{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}.summary-tile strong{font-size:15px;display:block;margin-top:3px}.compat-note{border:1px solid #315d5b;background:#17302f;border-radius:9px;padding:10px;color:#b5e8e3;font-size:10px;line-height:1.5}
+    .kbd{display:inline-grid;place-items:center;min-width:17px;height:17px;padding:0 4px;border:1px solid #4a5360;border-bottom-width:2px;border-radius:4px;background:#202630;color:#adb7c5;font-size:8px;margin-left:auto}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(max-width:1050px){:root{--side:286px}.btn .wide-label{display:none}.brand{min-width:175px}.project-name{width:150px}.subbar{padding-left:70px}.template-grid{grid-template-columns:repeat(3,1fr)}.image-studio{grid-template-columns:1fr}.trace-pane canvas{height:190px}}
   </style>
 </head>
 <body>
-  <main>
-    <h1>CutCraft</h1>
-    <p>Laser SVG studio for outlined text, image tracing, holding bridges, and material fallout preview.</p>
-    <p>Repository: <a href="https://github.com/tbenitz/cutcraft-laser-designer">tbenitz/cutcraft-laser-designer</a></p>
-    <p>The full single-file app is <code>CutCraft_Laser_Designer.html</code>. Open that file in a browser to run it locally — no build step.</p>
-    <ol>
-      <li>Open the repo and choose <b>Add file → Upload files</b></li>
-      <li>Drop <code>CutCraft_Laser_Designer.html</code></li>
-      <li>Optional: rename it to <code>app.html</code> and turn on GitHub Pages from <code>main</code></li>
-    </ol>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brandmark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 17 17 4l3 3L7 20H4v-3Z"/><path d="m13 8 3 3M8 17l-1-1M3 4h6M6 1v6"/></svg></div>
+      <div class="brandname">CutCraft<small>Laser SVG Studio</small></div>
+    </div>
+    <input id="projectName" class="project-name" value="Untitled Design" aria-label="Project name">
+    <div class="divider"></div>
+    <button class="iconbtn" id="undoBtn" title="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 24 24"><path d="M9 7 4 12l5 5"/><path d="M5 12h8a6 6 0 0 1 6 6"/></svg></button>
+    <button class="iconbtn" id="redoBtn" title="Redo (Ctrl+Shift+Z)" aria-label="Redo"><svg viewBox="0 0 24 24"><path d="m15 7 5 5-5 5"/><path d="M19 12h-8a6 6 0 0 0-6 6"/></svg></button>
+    <div class="spacer"></div>
+    <button class="btn ghost" id="newBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span class="wide-label">New</span></button>
+    <button class="btn ghost" id="openBtn"><svg viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v10H3V7Z"/><path d="M3 11h18"/></svg><span class="wide-label">Open SVG</span></button>
+    <button class="btn" id="generateBtn"><svg viewBox="0 0 24 24"><path d="m12 3 1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3Z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z"/></svg>Generate</button>
+    <button class="btn primary" id="exportBtn"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 18v3h14v-3"/></svg>Save SVG</button>
+    <input id="fileInput" class="sr-only" type="file" accept=".svg,.json,.cutcraft,image/svg+xml,application/json">
+  </header>
+
+  <div class="subbar">
+    <div class="view-toggle" aria-label="Workspace view">
+      <button class="active" data-view="design">Design</button>
+      <button data-view="preview">Material preview</button>
+    </div>
+    <div class="divider"></div>
+    <span class="sub-label">Arrange</span>
+    <button class="iconbtn" data-align="left" title="Align left"><svg viewBox="0 0 24 24"><path d="M5 3v18M8 7h10v4H8zM8 14h7v4H8z"/></svg></button>
+    <button class="iconbtn" data-align="center" title="Align centers"><svg viewBox="0 0 24 24"><path d="M12 3v18M6 7h12v4H6zM8 14h8v4H8z"/></svg></button>
+    <button class="iconbtn" data-align="top" title="Align top"><svg viewBox="0 0 24 24"><path d="M3 5h18M7 8v10h4V8zM14 8v7h4V8z"/></svg></button>
+    <div class="divider"></div>
+    <button class="btn compact ghost" id="gridBtn" title="Toggle grid"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 10h16M10 4v16"/></svg>Grid</button>
+    <button class="btn compact ghost" id="snapBtn" title="Snap to grid"><svg viewBox="0 0 24 24"><path d="M6 3v9a6 6 0 0 0 12 0V3"/><path d="M6 7h4M14 7h4"/></svg>Snap</button>
+    <div class="spacer"></div>
+    <button class="iconbtn" id="zoomOutBtn" title="Zoom out"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5M7.5 10.5h6"/></svg></button>
+    <span class="zoom-readout" id="zoomReadout">100%</span>
+    <button class="iconbtn" id="zoomInBtn" title="Zoom in"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5M7.5 10.5h6M10.5 7.5v6"/></svg></button>
+    <button class="btn compact ghost" id="fitBtn" title="Fit material to view">Fit</button>
+  </div>
+
+  <main class="main">
+    <nav class="toolbar" aria-label="Drawing tools">
+      <button class="toolbtn active" data-tool="select" title="Select and transform (V)"><svg viewBox="0 0 24 24"><path d="m5 3 13 9-6 1-3 6L5 3Z"/></svg>Select <span class="kbd">V</span></button>
+      <button class="toolbtn" data-tool="node" title="Edit freehand path points (N)"><svg viewBox="0 0 24 24"><path d="M5 17 9 7l9 3-3 9-10-2Z"/><circle cx="5" cy="17" r="1.5"/><circle cx="9" cy="7" r="1.5"/><circle cx="18" cy="10" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>Nodes <span class="kbd">N</span></button>
+      <button class="toolbtn" data-tool="pan" title="Pan canvas (H or Space)"><svg viewBox="0 0 24 24"><path d="M8 11V6a2 2 0 0 1 4 0v4-6a2 2 0 0 1 4 0v6-4a2 2 0 0 1 4 0v7c0 5-3 8-8 8-3 0-5-2-7-5l-2-3a2 2 0 0 1 3-2l2 2"/></svg>Pan <span class="kbd">H</span></button>
+      <div class="tool-sep"></div>
+      <button class="toolbtn" data-tool="rect" title="Rectangle (R)"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="1"/></svg>Rect <span class="kbd">R</span></button>
+      <button class="toolbtn" data-tool="ellipse" title="Ellipse (E)"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8" ry="6.5"/></svg>Ellipse <span class="kbd">E</span></button>
+      <button class="toolbtn" data-tool="line" title="Line (L)"><svg viewBox="0 0 24 24"><path d="M5 19 19 5"/></svg>Line <span class="kbd">L</span></button>
+      <button class="toolbtn" data-tool="pen" title="Freehand path (P)"><svg viewBox="0 0 24 24"><path d="M4 17c4-9 7 3 10-6 2-6 5-5 6-5"/><path d="M4 20h.01"/></svg>Path <span class="kbd">P</span></button>
+      <button class="toolbtn" data-tool="star" title="Star (S)"><svg viewBox="0 0 24 24"><path d="m12 3 2.5 5.7 6.2.6-4.7 4.1 1.4 6.1-5.4-3.2-5.4 3.2L8 13.4 3.3 9.3l6.2-.6L12 3Z"/></svg>Star <span class="kbd">S</span></button>
+      <button class="toolbtn" data-tool="polygon" title="Hexagon (G)"><svg viewBox="0 0 24 24"><path d="m8 4 8 0 4 8-4 8H8l-4-8 4-8Z"/></svg>Polygon <span class="kbd">G</span></button>
+      <button class="toolbtn" data-tool="text" title="Outlined laser text (T)"><svg viewBox="0 0 24 24"><path d="M5 5h14M12 5v14M8 19h8"/></svg>Text <span class="kbd">T</span></button>
+      <button class="toolbtn" data-tool="image" title="Trace a photo or image (I)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m4 17 5-5 3 3 3-4 5 6"/></svg>Image <span class="kbd">I</span></button>
+      <button class="toolbtn" data-tool="bridge" title="Add an uncut holding branch (B)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 9V4M12 15v5"/></svg>Bridge <span class="kbd">B</span></button>
+      <div class="tool-sep"></div>
+      <button class="toolbtn" id="duplicateTool" title="Duplicate selection (Ctrl+D)"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="1"/><path d="M16 8V5H5v11h3"/></svg>Duplicate</button>
+      <button class="toolbtn" id="deleteTool" title="Delete selection"><svg viewBox="0 0 24 24"><path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>Delete</button>
+    </nav>
+
+    <section class="stage-wrap">
+      <div class="stage" id="stage">
+        <svg id="editorSvg" tabindex="0" aria-label="Laser design canvas" viewBox="-10 -10 140 140">
+          <defs>
+            <pattern id="minorGrid" width="1" height="1" patternUnits="userSpaceOnUse"><path d="M 1 0 L 0 0 0 1" fill="none" stroke="#766f65" stroke-width=".035" class="grid-minor"/></pattern>
+            <pattern id="majorGrid" width="5" height="5" patternUnits="userSpaceOnUse"><rect width="5" height="5" fill="url(#minorGrid)"/><path d="M 5 0 L 0 0 0 5" fill="none" stroke="#514d48" stroke-width=".09" class="grid-major"/></pattern>
+          </defs>
+          <rect id="artboardShadow" class="artboard" x="0" y="0" width="120" height="120" rx=".4"/>
+          <rect id="gridRect" x="0" y="0" width="120" height="120" fill="url(#majorGrid)"/>
+          <rect id="artboardEdge" class="artboard-edge" x="0" y="0" width="120" height="120" rx=".4"/>
+          <g id="objectLayer"></g>
+          <g id="overlayLayer"></g>
+        </svg>
+        <div class="empty-state" id="emptyState">
+          <div class="empty-card">
+            <h2>Make something the laser understands.</h2>
+            <p>Draw from scratch, trace a photo, open an SVG, or start with one of 30 proven layouts. CutCraft previews the material connections—not just the artwork.</p>
+            <div class="quick-grid">
+              <button class="quick-card" data-quick="coaster"><span>◉</span>Coaster</button>
+              <button class="quick-card" data-quick="nameplate"><span>▰</span>Nameplate</button>
+              <button class="quick-card" data-quick="stencil"><span>▣</span>Stencil sign</button>
+            </div>
+          </div>
+        </div>
+        <div class="preview-pane" id="previewPane" hidden>
+          <div class="preview-hud">
+            <div class="seg"><button class="active" data-sim-mode="result">After fallout</button><button data-sim-mode="xray">Piece map</button></div>
+            <span class="stat"><strong id="looseCount">0</strong> loose pieces</span>
+            <span class="stat"><strong id="removedArea">0</strong> mm² removed</span>
+          </div>
+          <div class="preview-board" id="previewBoard"><canvas id="simCanvas" width="720" height="720"></canvas></div>
+          <div class="sim-busy" id="simBusy" hidden><div><div class="spinner"></div>Tracing material connections…</div></div>
+        </div>
+        <div class="toast-wrap" id="toastWrap"></div>
+      </div>
+    </section>
+
+    <aside class="sidepanel">
+      <div class="side-tabs"><button class="active" data-side="properties">Properties</button><button data-side="layers">Objects</button><button data-side="preflight">Preflight</button></div>
+      <div class="side-content">
+        <div class="side-view" id="propertiesView"></div>
+        <div class="side-view" id="layersView" hidden></div>
+        <div class="side-view" id="preflightView" hidden></div>
+      </div>
+    </aside>
   </main>
+
+  <footer class="statusbar">
+    <span><span class="status-dot"></span>Local &amp; offline</span>
+    <span id="cursorStatus">X 0.0 · Y 0.0 mm</span>
+    <span id="selectionStatus">Nothing selected</span>
+    <div class="right"><span id="objectStatus">0 objects</span><span id="docStatus">120 × 120 mm</span><span id="saveStatus">Ready</span></div>
+  </footer>
+</div>
+
+<!-- Generator -->
+<div class="modal-backdrop" id="generatorModal" hidden>
+  <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="genTitle">
+    <div class="modal-head"><div><h2 id="genTitle">30 laser-ready starting designs</h2><p>Search by project type; every cut, score, engraving, and word remains editable</p></div><button class="iconbtn" data-close="generatorModal" aria-label="Close">×</button></div>
+    <div class="modal-body">
+      <div class="catalog-tools">
+        <div class="field" style="margin:0"><label for="templateSearch">Find a project</label><input id="templateSearch" type="search" placeholder="Try sign, gift, holder, seasonal…"></div>
+        <div class="field" style="margin:0"><label for="templateCategory">Category</label><select id="templateCategory"><option value="all">All categories</option></select></div>
+      </div>
+      <div class="template-grid" id="templateGrid"></div>
+      <div class="field-row">
+        <div class="field"><label>Text / initials</label><input id="genText" value="MAKER"></div>
+        <div class="field suffix"><label>Overall size</label><input id="genSize" type="number" min="20" max="400" step="1" value="90"><span>mm</span></div>
+      </div>
+      <div class="checkrow"><span>Replace the current canvas</span><div class="switch" id="replaceSwitch" role="switch" aria-checked="false"></div></div>
+    </div>
+    <div class="modal-foot"><button class="btn ghost" data-close="generatorModal">Cancel</button><button class="btn primary" id="createTemplateBtn">Add editable design</button></div>
+  </div>
+</div>
+
+<!-- Text dialog -->
+<div class="modal-backdrop" id="textModal" hidden>
+  <div class="modal small" role="dialog" aria-modal="true" aria-labelledby="textTitle">
+    <div class="modal-head"><div><h2 id="textTitle">Add true outlined text</h2><p>Use normal type, then protect enclosed centers with adjustable bridges</p></div><button class="iconbtn" data-close="textModal" aria-label="Close">×</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Text</label><textarea id="newTextValue">YOUR TEXT</textarea></div>
+      <div class="font-preview" id="newTextPreview">YOUR TEXT</div>
+      <div class="field-row">
+        <div class="field"><label>Font style</label><select id="newTextFont"><option value="sans">Modern Sans</option><option value="rounded">Friendly Rounded</option><option value="serif">Classic Serif</option><option value="condensed">Bold Condensed</option><option value="mono">Workshop Mono</option><option value="block">Forge Block — geometric</option><option value="stencil">Forge Stencil — legacy</option></select></div>
+        <div class="field suffix"><label>Height</label><input id="newTextHeight" type="number" min="3" max="200" value="16"><span>mm</span></div>
+      </div>
+      <div class="field"><label>Operation</label><select id="newTextOperation"><option value="engrave">Fill engrave</option><option value="cut">Cut through</option><option value="score">Line score</option></select></div>
+      <div class="field"><label>Counter protection</label><div class="choice-grid"><button class="choice-card active" type="button" data-stencil-choice="normal"><b>Normal outlines</b>Best for engraving or removable letters</button><button class="choice-card" type="button" data-stencil-choice="auto"><b>Auto-stencil bridges</b>Keeps O, A, B, 8 and other centers attached</button></div></div>
+      <div id="stencilOptions" hidden>
+        <div class="field-row"><div class="field suffix"><label>Bridge thickness</label><input id="newStencilBridge" type="number" min="0.3" max="10" step="0.1" value="1.5"><span>mm</span></div><div class="field"><label>Direction</label><select id="newStencilDirection"><option value="smart">Smart — shortest side</option><option value="horizontal">Horizontal</option><option value="vertical">Vertical</option></select></div></div>
+      </div>
+      <div class="compat-note">The normal fonts are raster-traced into compound SVG paths inside this page. Auto-stencil cuts a controlled opening through each enclosed counter, so an O still looks like an O while its center stays connected. You can also add green manual bridges afterward.</div>
+    </div>
+    <div class="modal-foot"><button class="btn ghost" data-close="textModal">Cancel</button><button class="btn primary" id="addTextBtn">Add outlined text</button></div>
+  </div>
+</div>
+
+<!-- Image tracing studio -->
+<div class="modal-backdrop" id="imageModal" hidden>
+  <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="imageTitle">
+    <div class="modal-head"><div><h2 id="imageTitle">Image to laser vectors</h2><p>Turn a photo, logo, drawing, or scan into editable SVG paths</p></div><span class="offline-pill">Private · processed offline</span><button class="iconbtn" data-close="imageModal" aria-label="Close">×</button></div>
+    <div class="modal-body">
+      <div class="image-studio">
+        <div class="image-work">
+          <div class="drop-zone" id="traceDrop"><div><b>Drop an image here or click to choose</b><small>PNG, JPG, WebP, GIF, or BMP · up to 25 MB</small></div></div>
+          <input id="traceImageInput" class="sr-only" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp">
+          <div class="trace-canvases"><div class="trace-pane"><header><span>Original</span><span id="sourceDimensions">No image</span></header><canvas id="traceSourceCanvas" width="500" height="350"></canvas></div><div class="trace-pane"><header><span>Laser preview</span><span id="traceStatus">Choose an image</span></header><canvas id="traceResultCanvas" width="500" height="350"></canvas></div></div>
+        </div>
+        <div class="trace-controls">
+          <div class="field"><label>Conversion style</label><div class="mode-grid"><button class="mode-btn active" type="button" data-trace-mode="silhouette">Solid cutout</button><button class="mode-btn" type="button" data-trace-mode="sketch">Line sketch</button><button class="mode-btn" type="button" data-trace-mode="cartoon">Basic cartoon</button><button class="mode-btn" type="button" data-trace-mode="halftone">Photo halftone</button></div></div>
+          <div class="range-field"><label><span>Threshold</span><b id="thresholdReadout">128</b></label><input id="traceThreshold" type="range" min="20" max="235" value="128"></div>
+          <div class="range-field"><label><span>Smoothing</span><b id="smoothReadout">1</b></label><input id="traceSmooth" type="range" min="0" max="5" value="1"></div>
+          <div class="range-field"><label><span>Remove speckles</span><b id="speckleReadout">12</b></label><input id="traceSpeckle" type="range" min="0" max="200" value="12"></div>
+          <div class="range-field"><label><span>Detail</span><b id="detailReadout">55</b></label><input id="traceDetail" type="range" min="10" max="100" value="55"></div>
+          <div class="field-row"><div class="field suffix"><label>Design width</label><input id="traceWidth" type="number" min="5" max="900" step="1" value="80"><span>mm</span></div><div class="field"><label>Operation</label><select id="traceOperation"><option value="cut">Cut</option><option value="engrave">Engrave</option><option value="score">Score</option></select></div></div>
+          <div class="checkrow"><span>Invert light and dark</span><div class="switch" id="traceInvert" role="switch" aria-checked="false"></div></div>
+          <div class="trace-stats"><span><b id="tracePaths">0</b> paths</span><span><b id="tracePoints">0</b> points</span><span id="traceBusy" class="busy-note"></span></div>
+          <div class="section-note" style="margin-top:10px">Solid cutout follows the subject mass. Sketch finds strong edges. Cartoon simplifies shadows and outlines. Halftone turns tones into vector dots. Results are geometry, not an embedded bitmap.</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn ghost" data-close="imageModal">Cancel</button><button class="btn primary" id="addTraceBtn" disabled>Add vectors to canvas</button></div>
+  </div>
+</div>
+
+<!-- Export dialog -->
+<div class="modal-backdrop" id="exportModal" hidden>
+  <div class="modal small" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+    <div class="modal-head"><div><h2 id="exportTitle">Laser-ready SVG</h2><p>Simple vector geometry sized in millimeters</p></div><button class="iconbtn" data-close="exportModal" aria-label="Close">×</button></div>
+    <div class="modal-body">
+      <div class="export-summary"><div class="summary-tile"><small>Cut</small><strong id="exportCut">0</strong></div><div class="summary-tile"><small>Score</small><strong id="exportScore">0</strong></div><div class="summary-tile"><small>Engrave</small><strong id="exportEngrave">0</strong></div><div class="summary-tile"><small>Warnings</small><strong id="exportWarnings">0</strong></div></div>
+      <div class="field"><label>Filename</label><input id="exportFilename" value="cutcraft-design.svg"></div>
+      <div class="compat-note">Export uses an SVG viewBox matching the physical millimeter size, outlined text paths, inline geometry, and color-separated groups: black engrave, blue score, red cut. Import it into LaserPecker Design Space as <b>Vector Format</b>, then verify the material settings and processing order there.</div>
+      <div class="checkrow"><span>Also save editable CutCraft project</span><div class="switch" id="projectSwitch" role="switch" aria-checked="false"></div></div>
+    </div>
+    <div class="modal-foot"><button class="btn ghost" data-close="exportModal">Cancel</button><button class="btn primary" id="downloadSvgBtn">Download SVG</button></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const $ = (s, root=document) => root.querySelector(s);
+  const $$ = (s, root=document) => [...root.querySelectorAll(s)];
+  const NS = 'http://www.w3.org/2000/svg';
+  const COLORS = {cut:'#ff0000', score:'#0066ff', engrave:'#000000'};
+  const UI_COLORS = {cut:'#ff5d67', score:'#50a7ff', engrave:'#20242b', bridge:'#4fd18b'};
+  const STORAGE_KEY = 'cutcraft.project.v1';
+  const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+  const round = (v,p=3) => Number(Number(v).toFixed(p));
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+  const deep = v => JSON.parse(JSON.stringify(v));
+  const uid = () => 'o_' + Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-4);
+  const distance = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
+  const operationLabel = op => op === 'cut' ? 'Cut' : op === 'score' ? 'Score' : op === 'bridge' ? 'Uncut bridge' : 'Engrave';
+
+  const VECTOR_FONTS = {
+    sans:{label:'Modern Sans',css:'700 300px Arial, Helvetica, sans-serif',preview:'Arial, Helvetica, sans-serif'},
+    rounded:{label:'Friendly Rounded',css:'700 300px "Arial Rounded MT Bold", "Trebuchet MS", Arial, sans-serif',preview:'"Arial Rounded MT Bold", "Trebuchet MS", Arial, sans-serif'},
+    serif:{label:'Classic Serif',css:'700 300px Georgia, "Times New Roman", serif',preview:'Georgia, "Times New Roman", serif'},
+    condensed:{label:'Bold Condensed',css:'900 300px Impact, "Arial Narrow", Arial, sans-serif',preview:'Impact, "Arial Narrow", Arial, sans-serif'},
+    mono:{label:'Workshop Mono',css:'700 300px "Courier New", Courier, monospace',preview:'"Courier New", Courier, monospace'},
+    block:{label:'Forge Block',preview:'ui-monospace, monospace'},
+    stencil:{label:'Forge Stencil Legacy',preview:'ui-monospace, monospace'}
+  };
+
+  const TEMPLATE_CATALOG = [
+    {id:'coaster',name:'Geometric coaster',category:'Home',icon:'◉',description:'Cut edge with layered engraved rosette'},
+    {id:'nameplate',name:'Hanging nameplate',category:'Signs',icon:'▰',description:'Rounded plaque, mounting holes, and text'},
+    {id:'badge',name:'Monogram badge',category:'Gifts',icon:'✪',description:'Layered medallion with centered initials'},
+    {id:'keytag',name:'Key tag',category:'Gifts',icon:'⌁',description:'Compact tag with hardware hole'},
+    {id:'mandala',name:'Radial mandala',category:'Home',icon:'✺',description:'Procedural line engraving in a cut ring'},
+    {id:'stencil',name:'Cut-through stencil',category:'Signs',icon:'▣',description:'Normal text with automatic counter bridges'},
+    {id:'address',name:'Address plaque',category:'Signs',icon:'№',description:'House-number sign with mounting holes'},
+    {id:'ornament',name:'Round ornament',category:'Seasonal',icon:'❉',description:'Hanging ornament with snowflake detail'},
+    {id:'bookmark',name:'Bookmark',category:'Gifts',icon:'▯',description:'Slim bookmark with tassel hole'},
+    {id:'plantmarker',name:'Plant marker',category:'Home',icon:'♧',description:'Garden stake with engraved label'},
+    {id:'gifttag',name:'Gift tag',category:'Gifts',icon:'◇',description:'Angled tag, string hole, and name'},
+    {id:'doorhanger',name:'Door hanger',category:'Signs',icon:'◌',description:'Hook-over sign with message panel'},
+    {id:'earrings',name:'Earring pair',category:'Jewelry',icon:'◈',description:'Matched lightweight geometric drops'},
+    {id:'pettag',name:'Pet ID tag',category:'Gifts',icon:'♥',description:'Bone-style tag with contact text'},
+    {id:'switchplate',name:'Switch plate',category:'Home',icon:'▥',description:'Plate outline, switch slot, and screws'},
+    {id:'frame',name:'Photo frame',category:'Home',icon:'▤',description:'Outer cut, window, and scored border'},
+    {id:'clock',name:'Clock face',category:'Home',icon:'◷',description:'Numeral ticks with center shaft hole'},
+    {id:'trivet',name:'Geometric trivet',category:'Home',icon:'⌘',description:'Ventilated hot pad with retained pattern'},
+    {id:'lantern',name:'Lantern panel',category:'Home',icon:'▧',description:'Decorative light panel with cut vents'},
+    {id:'cable',name:'Cable organizer',category:'Organization',icon:'≋',description:'Desk cable slots and engraved labels'},
+    {id:'phonestand',name:'Phone stand parts',category:'Organization',icon:'▱',description:'Two slotted flat-pack stand pieces'},
+    {id:'desksign',name:'Desk name sign',category:'Signs',icon:'⌂',description:'Slotted sign face and base'},
+    {id:'boxlabel',name:'Storage label',category:'Organization',icon:'▭',description:'Rounded bin label with two holes'},
+    {id:'monogram',name:'Layered monogram',category:'Gifts',icon:'◎',description:'Initial centerpiece with decorative frame'},
+    {id:'snowflake',name:'Snowflake ornament',category:'Seasonal',icon:'❄',description:'Six-arm ornament with hanging hole'},
+    {id:'heartplaque',name:'Heart plaque',category:'Gifts',icon:'♡',description:'Heart silhouette with custom engraving'},
+    {id:'luggage',name:'Luggage tag',category:'Gifts',icon:'▱',description:'Durable tag with strap slot and details'},
+    {id:'napkinring',name:'Napkin ring wrap',category:'Home',icon:'∞',description:'Tabbed wrap with score guides'},
+    {id:'keyholder',name:'Wall key holder',category:'Organization',icon:'⚿',description:'Mounting board with hook slots'},
+    {id:'recipeboard',name:'Recipe board',category:'Home',icon:'≡',description:'Kitchen board with title and writing lines'}
+  ];
+
+  const FONT = {
+    'A':['01110','11011','11011','11111','11011','11011','11011'],
+    'B':['11110','11011','11011','11110','11011','11011','11110'],
+    'C':['01111','11000','11000','11000','11000','11000','01111'],
+    'D':['11110','11011','11011','11011','11011','11011','11110'],
+    'E':['11111','11000','11000','11110','11000','11000','11111'],
+    'F':['11111','11000','11000','11110','11000','11000','11000'],
+    'G':['01111','11000','11000','11011','11011','11011','01111'],
+    'H':['11011','11011','11011','11111','11011','11011','11011'],
+    'I':['11111','00110','00110','00110','00110','00110','11111'],
+    'J':['00111','00011','00011','00011','11011','11011','01110'],
+    'K':['11011','11110','11100','11000','11100','11110','11011'],
+    'L':['11000','11000','11000','11000','11000','11000','11111'],
+    'M':['10001','11011','11111','10101','10001','10001','10001'],
+    'N':['11001','11101','11101','11011','11011','11011','10011'],
+    'O':['01110','11011','11011','11011','11011','11011','01110'],
+    'P':['11110','11011','11011','11110','11000','11000','11000'],
+    'Q':['01110','11011','11011','11011','11111','01110','00011'],
+    'R':['11110','11011','11011','11110','11100','11110','11011'],
+    'S':['01111','11000','11000','01110','00011','00011','11110'],
+    'T':['11111','00110','00110','00110','00110','00110','00110'],
+    'U':['11011','11011','11011','11011','11011','11011','01110'],
+    'V':['11011','11011','11011','11011','11011','01110','00100'],
+    'W':['10001','10001','10001','10101','11111','11011','10001'],
+    'X':['11011','11011','01110','00100','01110','11011','11011'],
+    'Y':['11011','11011','01110','00110','00110','00110','00110'],
+    'Z':['11111','00011','00110','01100','11000','11000','11111'],
+    '0':['01110','11011','11011','11111','11011','11011','01110'],
+    '1':['00110','01110','00110','00110','00110','00110','11111'],
+    '2':['11110','00011','00011','01110','11000','11000','11111'],
+    '3':['11110','00011','00011','01110','00011','00011','11110'],
+    '4':['11011','11011','11011','11111','00011','00011','00011'],
+    '5':['11111','11000','11000','11110','00011','00011','11110'],
+    '6':['01111','11000','11000','11110','11011','11011','01110'],
+    '7':['11111','00011','00110','00110','01100','01100','01100'],
+    '8':['01110','11011','11011','01110','11011','11011','01110'],
+    '9':['01110','11011','11011','01111','00011','00011','11110'],
+    ' ':['00000','00000','00000','00000','00000','00000','00000'],
+    '-':['00000','00000','00000','11111','00000','00000','00000'],
+    '_':['00000','00000','00000','00000','00000','00000','11111'],
+    '.':['00000','00000','00000','00000','00000','00110','00110'],
+    ',':['00000','00000','00000','00000','00110','00110','01100'],
+    ':':['00000','00110','00110','00000','00110','00110','00000'],
+    '!':['00110','00110','00110','00110','00110','00000','00110'],
+    '?':['01110','11011','00011','00110','00110','00000','00110'],
+    '/':['00011','00011','00110','00110','01100','11000','11000'],
+    '+':['00000','00110','00110','11111','00110','00110','00000'],
+    '=':['00000','11111','00000','11111','00000','00000','00000'],
+    '#':['01010','11111','01010','01010','11111','01010','01010'],
+    '(':['00111','01100','11000','11000','11000','01100','00111'],
+    ')':['11100','00110','00011','00011','00011','00110','11100'],
+    '&':['01100','11010','11100','01101','11011','11011','01101'],
+    '@':['01110','11011','10111','10111','11000','11000','01111'],
+    '*':['00000','10101','01110','11111','01110','10101','00000'],
+    '|':['00110','00110','00110','00110','00110','00110','00110'],
+    "'":['00110','00110','01100','00000','00000','00000','00000'],
+    '"':['01010','01010','10100','00000','00000','00000','00000']
+  };
+  const STENCIL = {
+    'A':['01110','11011','11011','11011','11011','11011','11011'],
+    'B':['11110','11000','11011','11110','11000','11011','11110'],
+    'D':['11110','11011','11011','11000','11011','11011','11110'],
+    'O':['01110','11011','11011','11000','11011','11011','01110'],
+    'P':['11110','11011','11011','11000','11000','11000','11000'],
+    'Q':['01110','11011','11011','11000','11111','01110','00011'],
+    'R':['11110','11011','11011','11000','11100','11110','11011'],
+    '0':['01110','11011','11011','11000','11011','11011','01110'],
+    '4':['11011','11011','11011','11000','00011','00011','00011'],
+    '6':['01111','11000','11000','11000','11011','11011','01110'],
+    '8':['01110','11011','11000','01110','11000','11011','01110'],
+    '9':['01110','11011','11011','00011','00011','00011','11110']
+  };
+  Object.assign(FONT,{
+    'a':['00000','00000','01110','00011','01111','11011','01111'],
+    'b':['11000','11000','11110','11011','11011','11011','11110'],
+    'c':['00000','00000','01111','11000','11000','11000','01111'],
+    'd':['00011','00011','01111','11011','11011','11011','01111'],
+    'e':['00000','00000','01110','11011','11111','11000','01111'],
+    'f':['00111','01100','01100','11110','01100','01100','01100'],
+    'g':['00000','01111','11011','11011','01111','00011','11110'],
+    'h':['11000','11000','11110','11011','11011','11011','11011'],
+    'i':['00110','00000','01110','00110','00110','00110','01111'],
+    'j':['00011','00000','00111','00011','00011','11011','01110'],
+    'k':['11000','11000','11011','11110','11100','11110','11011'],
+    'l':['01100','01100','01100','01100','01100','01100','00111'],
+    'm':['00000','00000','11010','11111','10101','10101','10101'],
+    'n':['00000','00000','11110','11011','11011','11011','11011'],
+    'o':['00000','00000','01110','11011','11011','11011','01110'],
+    'p':['00000','00000','11110','11011','11110','11000','11000'],
+    'q':['00000','00000','01111','11011','01111','00011','00011'],
+    'r':['00000','00000','10111','11100','11000','11000','11000'],
+    's':['00000','00000','01111','11000','01110','00011','11110'],
+    't':['01100','01100','11110','01100','01100','01100','00111'],
+    'u':['00000','00000','11011','11011','11011','11011','01111'],
+    'v':['00000','00000','11011','11011','11011','01110','00100'],
+    'w':['00000','00000','10001','10101','10101','11111','01010'],
+    'x':['00000','00000','11011','01110','00100','01110','11011'],
+    'y':['00000','00000','11011','11011','01111','00011','11110'],
+    'z':['00000','00000','11111','00110','01100','11000','11111']
+  });
+
+  const state = {
+    name:'Untitled Design',
+    doc:{w:120,h:120,material:'Basswood',thickness:3,kerf:.15,grid:5},
+    objects:[],selection:[],tool:'select',view:'design',side:'properties',
+    snap:true,showGrid:true,camera:{x:-10,y:-10,w:140,h:140},fitCamera:null,
+    undo:[],redo:[],gesture:null,spaceDown:false,drawPreview:null,
+    textPoint:{x:20,y:20},simMode:'result',simResult:null,simToken:0,previewScale:1,
+    selectedTemplate:'coaster',replaceOnGenerate:false,bridgeWidth:1.5,textAutoStencil:false,
+    traceMode:'silhouette',traceInvert:false,dirty:false
+  };
+
+  const editorSvg = $('#editorSvg');
+  const objectLayer = $('#objectLayer');
+  const overlayLayer = $('#overlayLayer');
+  const stage = $('#stage');
+  let simTimer = null, saveTimer = null, renderRaf = 0, traceTimer = null;
+  const traceDraft={image:null,fileName:'',imageData:null,result:null,settings:null};
+
+  function toast(message,type='good',duration=3200){
+    const el=document.createElement('div');el.className=`toast ${type}`;el.innerHTML=message;$('#toastWrap').append(el);
+    setTimeout(()=>{el.style.opacity='0';el.style.transform='translateY(5px)';setTimeout(()=>el.remove(),220)},duration);
+  }
+  function showModal(id){$('#'+id).hidden=false;setTimeout(()=>$('#'+id+' input, #'+id+' textarea')?.focus(),20)}
+  function hideModal(id){$('#'+id).hidden=true}
+  function setSaveStatus(text){$('#saveStatus').textContent=text}
+
+  function snapshot(){return JSON.stringify({name:state.name,doc:state.doc,objects:state.objects})}
+  function restoreSnapshot(raw){
+    const d=JSON.parse(raw);state.name=d.name||'Untitled Design';state.doc=d.doc;state.objects=d.objects||[];state.selection=[];
+    $('#projectName').value=state.name;fitView();markChanged(false);renderAll();
+  }
+  function pushUndo(before,label='Change'){
+    const now=snapshot();if(before===now)return false;state.undo.push({data:before,label});if(state.undo.length>80)state.undo.shift();state.redo=[];markChanged();return true;
+  }
+  function mutate(label,fn){const before=snapshot();fn();pushUndo(before,label);renderAll()}
+  function undo(){if(!state.undo.length)return;const item=state.undo.pop();state.redo.push({data:snapshot(),label:item.label});restoreSnapshot(item.data);toast(`<b>Undo:</b> ${esc(item.label)}`,'good',1800)}
+  function redo(){if(!state.redo.length)return;const item=state.redo.pop();state.undo.push({data:snapshot(),label:item.label});restoreSnapshot(item.data);toast(`<b>Redo:</b> ${esc(item.label)}`,'good',1800)}
+  function markChanged(dirty=true){state.dirty=dirty;setSaveStatus(dirty?'Unsaved changes':'Saved locally');clearTimeout(saveTimer);saveTimer=setTimeout(autosave,450)}
+  function autosave(){
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify({name:state.name,doc:state.doc,objects:state.objects}));state.dirty=false;setSaveStatus('Saved locally')}catch(e){setSaveStatus('Local save unavailable')}
+  }
+  function loadAutosave(){
+    try{const raw=localStorage.getItem(STORAGE_KEY);if(!raw)return false;const d=JSON.parse(raw);if(!d.doc||!Array.isArray(d.objects))return false;state.name=d.name||state.name;state.doc={...state.doc,...d.doc};state.objects=d.objects.map(normalizeProjectObject);$('#projectName').value=state.name;return true}catch(e){return false}
+  }
+
+  function glyphMatrix(ch,stencil){
+    return (stencil&&STENCIL[ch.toUpperCase()])||FONT[ch]||FONT[ch.toUpperCase()]||FONT['?'];
+  }
+  function matrixLoops(rows){
+    const h=rows.length,w=rows[0]?.length||0,filled=(x,y)=>y>=0&&y<h&&x>=0&&x<w&&rows[y][x]==='1';
+    const edges=[];
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(filled(x,y)){
+      if(!filled(x,y-1))edges.push([{x,y},{x:x+1,y}]);
+      if(!filled(x+1,y))edges.push([{x:x+1,y},{x:x+1,y:y+1}]);
+      if(!filled(x,y+1))edges.push([{x:x+1,y:y+1},{x,y:y+1}]);
+      if(!filled(x-1,y))edges.push([{x,y:y+1},{x,y}]);
+    }
+    const key=p=>`${p.x},${p.y}`,dir=(a,b)=>b.x>a.x?0:b.y>a.y?1:b.x<a.x?2:3;
+    const outgoing=new Map();edges.forEach((e,i)=>{const k=key(e[0]);if(!outgoing.has(k))outgoing.set(k,[]);outgoing.get(k).push(i)});
+    const used=new Uint8Array(edges.length),loops=[];
+    for(let seed=0;seed<edges.length;seed++){
+      if(used[seed])continue;let idx=seed,loop=[],guard=0,first=edges[idx][0],currentDir=dir(...edges[idx]);
+      while(!used[idx]&&guard++<edges.length+5){
+        used[idx]=1;const [a,b]=edges[idx];if(!loop.length)loop.push(a);loop.push(b);if(key(b)===key(first))break;
+        const candidates=(outgoing.get(key(b))||[]).filter(i=>!used[i]);if(!candidates.length)break;
+        candidates.sort((ia,ib)=>{
+          const da=(dir(...edges[ia])-currentDir+4)%4,db=(dir(...edges[ib])-currentDir+4)%4;
+          const rank=d=>d===1?0:d===0?1:d===3?2:3;return rank(da)-rank(db);
+        });idx=candidates[0];currentDir=dir(...edges[idx]);
+      }
+      if(loop.length>3&&key(loop[0])===key(loop[loop.length-1])){
+        loop.pop();const simple=[];
+        for(let i=0;i<loop.length;i++){
+          const a=loop[(i-1+loop.length)%loop.length],b=loop[i],c=loop[(i+1)%loop.length];
+          if((a.x===b.x&&b.x===c.x)||(a.y===b.y&&b.y===c.y))continue;simple.push(b);
+        }
+        if(simple.length>=3)loops.push(simple);
+      }
+    }
+    return loops;
+  }
+  const loopCache=new Map();
+  function glyphLoops(ch,stencil){const k=(stencil?'s':'b')+ch;if(!loopCache.has(k))loopCache.set(k,matrixLoops(glyphMatrix(ch,stencil)));return loopCache.get(k)}
+  function textMetrics(content){
+    const lines=String(content||' ').split(/\r?\n/);return {unitW:Math.max(1,...lines.map(l=>Math.max(0,l.length*6-1))),unitH:Math.max(7,lines.length*9-2),lines};
+  }
+  function polygonArea(points){let a=0;for(let i=0;i<points.length;i++){const p=points[i],q=points[(i+1)%points.length];a+=p.x*q.y-q.x*p.y}return a/2}
+  function simplifyClosed(points,tolerance=1){
+    if(points.length<5)return points;const open=[...points,points[0]],simple=simplifyPoints(open,tolerance);if(simple.length>1&&distance(simple[0],simple[simple.length-1])<.001)simple.pop();return simple.length>=3?simple:points;
+  }
+  function traceBinaryMask(mask,w,h,options={}){
+    const minArea=Math.max(0,Number(options.minArea)||0),tolerance=Math.max(0,Number(options.simplify)||0),edges=[],stride=w+1,filled=(x,y)=>x>=0&&y>=0&&x<w&&y<h&&mask[y*w+x];
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(filled(x,y)){
+      if(!filled(x,y-1))edges.push([x,y,x+1,y]);
+      if(!filled(x+1,y))edges.push([x+1,y,x+1,y+1]);
+      if(!filled(x,y+1))edges.push([x+1,y+1,x,y+1]);
+      if(!filled(x-1,y))edges.push([x,y+1,x,y]);
+    }
+    const outgoing=new Map(),key=(x,y)=>y*stride+x,dir=e=>e[2]>e[0]?0:e[3]>e[1]?1:e[2]<e[0]?2:3;
+    edges.forEach((e,i)=>{const k=key(e[0],e[1]);if(!outgoing.has(k))outgoing.set(k,[]);outgoing.get(k).push(i)});
+    const used=new Uint8Array(edges.length),loops=[];
+    for(let seed=0;seed<edges.length;seed++){
+      if(used[seed])continue;let idx=seed,guard=0,currentDir=dir(edges[idx]),firstKey=key(edges[idx][0],edges[idx][1]),loop=[];
+      while(!used[idx]&&guard++<edges.length+8){
+        const e=edges[idx];used[idx]=1;if(!loop.length)loop.push({x:e[0],y:e[1]});loop.push({x:e[2],y:e[3]});const endKey=key(e[2],e[3]);if(endKey===firstKey)break;
+        const candidates=(outgoing.get(endKey)||[]).filter(i=>!used[i]);if(!candidates.length)break;
+        candidates.sort((ia,ib)=>{const turn=d=>(d===1?0:d===0?1:d===3?2:3),da=(dir(edges[ia])-currentDir+4)%4,db=(dir(edges[ib])-currentDir+4)%4;return turn(da)-turn(db)});idx=candidates[0];currentDir=dir(edges[idx]);
+      }
+      if(loop.length>3&&distance(loop[0],loop[loop.length-1])<.01){loop.pop();if(tolerance)loop=simplifyClosed(loop,tolerance);if(loop.length>=3&&Math.abs(polygonArea(loop))>=minArea)loops.push(loop)}
+    }
+    return loops;
+  }
+  function removeSmallMaskComponents(mask,w,h,minPixels){
+    minPixels=Math.max(0,Math.round(minPixels||0));if(minPixels<2)return mask;const seen=new Uint8Array(mask.length),queue=new Int32Array(mask.length);
+    for(let seed=0;seed<mask.length;seed++)if(mask[seed]&&!seen[seed]){let head=0,tail=0;queue[tail++]=seed;seen[seed]=1;const found=[];while(head<tail){const i=queue[head++],x=i%w,y=(i/w)|0;found.push(i);const add=j=>{if(j>=0&&j<mask.length&&mask[j]&&!seen[j]){seen[j]=1;queue[tail++]=j}};if(x)add(i-1);if(x<w-1)add(i+1);if(y)add(i-w);if(y<h-1)add(i+w)}if(found.length<minPixels)found.forEach(i=>mask[i]=0)}return mask;
+  }
+  function autoStencilMask(source,w,h,bridgePx=8,direction='smart'){
+    const mask=new Uint8Array(source),outside=new Uint8Array(mask.length),seen=new Uint8Array(mask.length),queue=new Int32Array(mask.length),addOutside=i=>{if(i>=0&&i<mask.length&&!mask[i]&&!outside[i]){outside[i]=1;queue[tail++]=i}};let head=0,tail=0;
+    for(let x=0;x<w;x++){addOutside(x);addOutside((h-1)*w+x)}for(let y=0;y<h;y++){addOutside(y*w);addOutside(y*w+w-1)}
+    while(head<tail){const i=queue[head++],x=i%w,y=(i/w)|0;if(x)addOutside(i-1);if(x<w-1)addOutside(i+1);if(y)addOutside(i-w);if(y<h-1)addOutside(i+w)}
+    const holes=[];
+    for(let seed=0;seed<mask.length;seed++)if(!mask[seed]&&!outside[seed]&&!seen[seed]){head=0;tail=0;queue[tail++]=seed;seen[seed]=1;const pixels=[];while(head<tail){const i=queue[head++],x=i%w,y=(i/w)|0;pixels.push({x,y});const add=j=>{if(j>=0&&j<mask.length&&!mask[j]&&!outside[j]&&!seen[j]){seen[j]=1;queue[tail++]=j}};if(x)add(i-1);if(x<w-1)add(i+1);if(y)add(i-w);if(y<h-1)add(i+w)}if(pixels.length>2)holes.push(pixels)}
+    const allowed=direction==='horizontal'?['left','right']:direction==='vertical'?['up','down']:['left','right','up','down'];
+    for(const pixels of holes){
+      const rows=new Map(),cols=new Map();for(const p of pixels){const r=rows.get(p.y)||[p.x,p.x];r[0]=Math.min(r[0],p.x);r[1]=Math.max(r[1],p.x);rows.set(p.y,r);const c=cols.get(p.x)||[p.y,p.y];c[0]=Math.min(c[0],p.y);c[1]=Math.max(c[1],p.y);cols.set(p.x,c)}
+      const candidates=[];
+      const scan=(x,y,dx,dy,side)=>{let cx=x+dx,cy=y+dy,len=0,sawInk=false;while(cx>=0&&cy>=0&&cx<w&&cy<h){const i=cy*w+cx;if(mask[i]){sawInk=true;len++}else if(sawInk&&outside[i]){candidates.push({side,x1:x,y1:y,x2:cx,y2:cy,len});return}else if(!sawInk&&outside[i])return;cx+=dx;cy+=dy}};
+      if(allowed.includes('left'))for(const [y,[minX]] of rows)scan(minX,y,-1,0,'left');
+      if(allowed.includes('right'))for(const [y,row] of rows)scan(row[1],y,1,0,'right');
+      if(allowed.includes('up'))for(const [x,[minY]] of cols)scan(x,minY,0,-1,'up');
+      if(allowed.includes('down'))for(const [x,col] of cols)scan(x,col[1],0,1,'down');
+      if(!candidates.length)continue;candidates.sort((a,b)=>a.len-b.len);const c=candidates[0],thick=clamp(Math.round(bridgePx),1,Math.max(w,h)),half=Math.floor(thick/2);
+      if(c.side==='left'||c.side==='right'){const a=Math.min(c.x1,c.x2),b=Math.max(c.x1,c.x2);for(let y=c.y1-half;y<=c.y1+Math.ceil(thick/2);y++)for(let x=a;x<=b;x++)if(x>=0&&y>=0&&x<w&&y<h)mask[y*w+x]=0}
+      else{const a=Math.min(c.y1,c.y2),b=Math.max(c.y1,c.y2);for(let x=c.x1-half;x<=c.x1+Math.ceil(thick/2);x++)for(let y=a;y<=b;y++)if(x>=0&&y>=0&&x<w&&y<h)mask[y*w+x]=0}
+    }
+    return mask;
+  }
+  function legacyTextVector(obj){
+    const m=textMetrics(obj.text),out=[];
+    m.lines.forEach((line,row)=>[...line].forEach((ch,col)=>{
+      glyphLoops(ch,obj.font==='stencil').forEach(loop=>out.push(loop.map(p=>({x:(col*6+p.x)/m.unitW,y:(row*9+p.y)/m.unitH}))));
+    }));
+    return out;
+  }
+  function estimateTextAspect(content,font='sans'){
+    if(font==='block'||font==='stencil'){const m=textMetrics(content);return m.unitW/m.unitH}
+    try{const c=document.createElement('canvas'),ctx=c.getContext('2d'),lines=String(content||' ').split(/\r?\n/);ctx.font=VECTOR_FONTS[font]?.css||VECTOR_FONTS.sans.css;const width=Math.max(80,...lines.map(line=>ctx.measureText(line||' ').width));return clamp(width/(lines.length*360-60),.2,20)}catch{return Math.max(.5,String(content||' ').length*.62)}
+  }
+  function textVectorKey(obj){return [obj.text,obj.font,obj.autoStencil?1:0,round(obj.stencilBridge||1.5,2),obj.bridgeDirection||'smart',round(obj.w,2),round(obj.h,2)].join('|')}
+  function buildTextVector(obj){
+    if(obj.font==='block'||obj.font==='stencil')return legacyTextVector(obj);
+    const lines=String(obj.text||'TEXT').slice(0,240).split(/\r?\n/),font=VECTOR_FONTS[obj.font]||VECTOR_FONTS.sans,size=300,lineH=360,pad=30,c=document.createElement('canvas'),measure=c.getContext('2d');measure.font=font.css;const measured=lines.map(line=>measure.measureText(line||' ').width),scaleDown=Math.min(1,3900/Math.max(100,...measured));const fs=Math.max(60,Math.round(size*scaleDown)),lh=Math.round(lineH*scaleDown),padding=Math.round(pad*scaleDown);c.width=Math.max(80,Math.ceil(Math.max(...measured)*scaleDown+padding*2));c.height=Math.max(80,lines.length*lh+padding*2);const ctx=c.getContext('2d',{willReadFrequently:true});ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#fff';ctx.textBaseline='top';ctx.font=font.css.replace('300px',fs+'px');lines.forEach((line,i)=>ctx.fillText(line,padding,padding+i*lh));const rgba=ctx.getImageData(0,0,c.width,c.height).data,mask=new Uint8Array(c.width*c.height);for(let i=0;i<mask.length;i++)mask[i]=rgba[i*4+3]>72?1:0;
+    const bridgePx=(obj.stencilBridge||1.5)/Math.max(.1,obj.h)*(c.height-padding*2),working=obj.autoStencil?autoStencilMask(mask,c.width,c.height,bridgePx,obj.bridgeDirection||'smart'):mask,loops=traceBinaryMask(working,c.width,c.height,{simplify:1.1,minArea:3});if(!loops.length)return legacyTextVector({...obj,font:'block'});let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;loops.flat().forEach(p=>{minX=Math.min(minX,p.x);minY=Math.min(minY,p.y);maxX=Math.max(maxX,p.x);maxY=Math.max(maxY,p.y)});const bw=Math.max(1,maxX-minX),bh=Math.max(1,maxY-minY);return loops.map(loop=>loop.map(p=>({x:round((p.x-minX)/bw,6),y:round((p.y-minY)/bh,6)})));
+  }
+  function textLoops(obj){
+    const key=textVectorKey(obj),activelyResizing=state.gesture?.type==='resize'&&state.gesture.original?.id===obj.id;if(!Array.isArray(obj.vectorLoops)||(!activelyResizing&&obj.vectorKey!==key)){obj.vectorLoops=buildTextVector(obj);obj.vectorKey=key}
+    return obj.vectorLoops.map(loop=>loop.map(p=>({x:obj.x+p.x*obj.w,y:obj.y+p.y*obj.h})));
+  }
+  function regularPolygon(obj,count,inner=1){
+    const pts=[],cx=obj.x+obj.w/2,cy=obj.y+obj.h/2,rx=obj.w/2,ry=obj.h/2,total=inner<1?count*2:count;
+    for(let i=0;i<total;i++){const a=-Math.PI/2+i*Math.PI*2/total,r=inner<1?(i%2?inner:1):1;pts.push({x:cx+Math.cos(a)*rx*r,y:cy+Math.sin(a)*ry*r})}return pts;
+  }
+  function ellipsePoints(obj,n=96){const a=[];for(let i=0;i<n;i++){const t=i*Math.PI*2/n;a.push({x:obj.x+obj.w/2+Math.cos(t)*obj.w/2,y:obj.y+obj.h/2+Math.sin(t)*obj.h/2})}return a}
+  function roundedRectPoints(obj){
+    const r=clamp(Number(obj.rx)||0,0,Math.min(obj.w,obj.h)/2);if(!r)return[{x:obj.x,y:obj.y},{x:obj.x+obj.w,y:obj.y},{x:obj.x+obj.w,y:obj.y+obj.h},{x:obj.x,y:obj.y+obj.h}];const pts=[],corners=[[obj.x+obj.w-r,obj.y+r,-Math.PI/2,0],[obj.x+obj.w-r,obj.y+obj.h-r,0,Math.PI/2],[obj.x+r,obj.y+obj.h-r,Math.PI/2,Math.PI],[obj.x+r,obj.y+r,Math.PI,Math.PI*1.5]];corners.forEach(([cx,cy,a0,a1])=>{for(let i=0;i<=6;i++){const a=a0+(a1-a0)*i/6;pts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r})}});return pts;
+  }
+  function heartPoints(obj,n=120){const pts=[];for(let i=0;i<n;i++){const t=Math.PI*2*i/n,x=16*Math.sin(t)**3,y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);pts.push({x:obj.x+obj.w*(x+17)/34,y:obj.y+obj.h*(17-y)/34})}return pts}
+  function objectLoops(obj){
+    if(obj.type==='text')return textLoops(obj);
+    if(obj.type==='path')return [(obj.points||[]).map(p=>({x:obj.x+p.x*obj.w,y:obj.y+p.y*obj.h}))];
+    if(obj.type==='vector')return (obj.loops||[]).map(loop=>(loop.points||loop||[]).map(p=>({x:obj.x+p.x*obj.w,y:obj.y+p.y*obj.h}))).filter(loop=>loop.length>1);
+    if(obj.type==='import'&&Array.isArray(obj.cutLoops))return obj.cutLoops.map(loop=>(loop.points||[]).map(p=>({x:obj.x+p.x*obj.w,y:obj.y+p.y*obj.h}))).filter(loop=>loop.length>1);
+    if(obj.type==='shape'){
+      if(obj.shape==='rect')return [[...roundedRectPoints(obj)]];
+      if(obj.shape==='ellipse')return [ellipsePoints(obj)];
+      if(obj.shape==='star')return [regularPolygon(obj,5,.43)];
+      if(obj.shape==='polygon')return [regularPolygon(obj,obj.sides||6)];
+      if(obj.shape==='heart')return [heartPoints(obj)];
+      if(obj.shape==='line'){const a=obj.lineA||{x:0,y:0},b=obj.lineB||{x:1,y:1};return [[{x:obj.x+a.x*obj.w,y:obj.y+a.y*obj.h},{x:obj.x+b.x*obj.w,y:obj.y+b.y*obj.h}]]}
+    }
+    return [];
+  }
+  function loopIsClosed(obj,index=0){if(obj.type==='vector')return obj.loops?.[index]?.closed!==false;if(obj.type==='import'&&obj.cutLoops?.[index])return obj.cutLoops[index].closed!==false;return isClosed(obj)}
+  function isClosed(obj){return obj.type==='text'||obj.type==='vector'||(obj.type==='shape'&&obj.shape!=='line')||(obj.type==='path'&&obj.closed)||(obj.type==='import'&&(!obj.cutLoops?.length||obj.cutLoops.every(loop=>loop.closed!==false)))}
+  function polylineLength(points,closed=true){let d=0;for(let i=1;i<points.length;i++)d+=distance(points[i-1],points[i]);if(closed&&points.length>2)d+=distance(points[points.length-1],points[0]);return d}
+  function pointAt(points,d,closed=true){
+    const segs=[];let total=0,n=closed?points.length:points.length-1;
+    for(let i=0;i<n;i++){const a=points[i],b=points[(i+1)%points.length],len=distance(a,b);segs.push({a,b,start:total,len});total+=len}
+    if(closed)d=((d%total)+total)%total;else d=clamp(d,0,total);
+    const s=segs.find(s=>d<=s.start+s.len)||segs[segs.length-1],t=s.len?(d-s.start)/s.len:0;return {x:s.a.x+(s.b.x-s.a.x)*t,y:s.a.y+(s.b.y-s.a.y)*t};
+  }
+  function tabbedPointRuns(points,count,gap){
+    const per=polylineLength(points,true);if(!count||per<=count*gap+1)return [{points,closed:true}];
+    const runs=[],step=per/count,sample=Math.max(.18,per/900);
+    for(let i=0;i<count;i++){
+      let start=i*step+gap/2,end=(i+1)*step-gap/2,pts=[pointAt(points,start,true)];
+      for(let d=start+sample;d<end;d+=sample)pts.push(pointAt(points,d,true));pts.push(pointAt(points,end,true));runs.push({points:pts,closed:false});
+    }return runs;
+  }
+  function tabbedPathData(points,count,gap){return tabbedPointRuns(points,count,gap).map(run=>pathData(run.points,run.closed))}
+  function pathData(points,closed=false){if(!points?.length)return '';return 'M'+points.map(p=>`${round(p.x)} ${round(p.y)}`).join(' L')+(closed?' Z':'')}
+  function activeBridges(){return state.objects.filter(o=>o.type==='bridge'&&o.visible!==false)}
+  function pointInObjectRotation(p,obj){if(!obj.rotation)return p;return rotatePoint(p,{x:obj.x+obj.w/2,y:obj.y+obj.h/2},obj.rotation)}
+  function segmentBridgeInterval(a,b,obj,bridge){
+    const ga=pointInObjectRotation(a,obj),gb=pointInObjectRotation(b,obj),bc={x:bridge.x+bridge.w/2,y:bridge.y+bridge.h/2},la=rotatePoint(ga,bc,-(bridge.rotation||0)),lb=rotatePoint(gb,bc,-(bridge.rotation||0)),pad=(state.doc.kerf||.15)/2,minX=bridge.x-pad,maxX=bridge.x+bridge.w+pad,minY=bridge.y-pad,maxY=bridge.y+bridge.h+pad,dx=lb.x-la.x,dy=lb.y-la.y,p=[-dx,dx,-dy,dy],q=[la.x-minX,maxX-la.x,la.y-minY,maxY-la.y];let t0=0,t1=1;
+    for(let i=0;i<4;i++){if(Math.abs(p[i])<1e-10){if(q[i]<0)return null;continue}const r=q[i]/p[i];if(p[i]<0){if(r>t1)return null;if(r>t0)t0=r}else{if(r<t0)return null;if(r<t1)t1=r}}
+    return t1-t0>1e-7?[clamp(t0,0,1),clamp(t1,0,1)]:null;
+  }
+  function mergeIntervals(intervals){
+    if(!intervals.length)return[];intervals.sort((a,b)=>a[0]-b[0]);const out=[intervals[0].slice()];for(let i=1;i<intervals.length;i++){const last=out[out.length-1],next=intervals[i];if(next[0]<=last[1]+1e-7)last[1]=Math.max(last[1],next[1]);else out.push(next.slice())}return out;
+  }
+  function clipPolylineByBridges(points,closed,obj,bridges){
+    if(points.length<2||!bridges.length)return{runs:[{points,closed}],affected:false};const runs=[];let current=[],affected=false;const count=closed?points.length:points.length-1,at=(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t}),same=(a,b)=>a&&b&&distance(a,b)<1e-5;
+    const flush=()=>{if(current.length>1)runs.push(current);current=[]},addPiece=(a,b)=>{if(!current.length)current=[a,b];else if(same(current[current.length-1],a))current.push(b);else{flush();current=[a,b]}};
+    for(let i=0;i<count;i++){
+      const a=points[i],b=points[(i+1)%points.length],intervals=mergeIntervals(bridges.map(br=>segmentBridgeInterval(a,b,obj,br)).filter(Boolean));
+      if(!intervals.length){addPiece(a,b);continue}affected=true;let cursor=0;
+      for(const gap of intervals){if(gap[0]>cursor+1e-7)addPiece(at(a,b,cursor),at(a,b,gap[0]));flush();cursor=Math.max(cursor,gap[1])}
+      if(cursor<1-1e-7)addPiece(at(a,b,cursor),b);
+    }
+    flush();if(closed&&runs.length>1&&same(runs[runs.length-1][runs[runs.length-1].length-1],runs[0][0])){runs[0]=runs.pop().concat(runs[0].slice(1))}
+    return affected?{runs:runs.map(p=>({points:p,closed:false})),affected:true}:{runs:[{points,closed}],affected:false};
+  }
+  function bridgeIntersectsCut(bridge,obj){
+    if(obj.operation!=='cut'||obj.type==='bridge')return false;const loops=objectLoops(obj);return loops.some((loop,index)=>{const count=loopIsClosed(obj,index)?loop.length:loop.length-1;for(let i=0;i<count;i++)if(segmentBridgeInterval(loop[i],loop[(i+1)%loop.length],obj,bridge))return true;return false});
+  }
+  function bridgeRailRuns(obj,bridge,otherBridges=[]){
+    if(obj.operation!=='cut'||obj.type==='bridge')return[];const sides={top:[],bottom:[]},pad=(state.doc.kerf||.15)/2,bc={x:bridge.x+bridge.w/2,y:bridge.y+bridge.h/2},minY=bridge.y-pad,maxY=bridge.y+bridge.h+pad,tol=Math.max(.002,(state.doc.kerf||.15)*.08),at=(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t});
+    objectLoops(obj).forEach((loop,index)=>{const count=loopIsClosed(obj,index)?loop.length:loop.length-1;for(let i=0;i<count;i++){const a=loop[i],b=loop[(i+1)%loop.length],hit=segmentBridgeInterval(a,b,obj,bridge);if(!hit)continue;hit.forEach(t=>{const point=at(a,b,t),global=pointInObjectRotation(point,obj),local=rotatePoint(global,bc,-(bridge.rotation||0)),top=Math.abs(local.y-minY),bottom=Math.abs(local.y-maxY);if(Math.min(top,bottom)<=tol)sides[top<=bottom?'top':'bottom'].push({along:local.x,point})})}});
+    const rails=[];Object.values(sides).forEach(list=>{list.sort((a,b)=>a.along-b.along);const unique=list.filter((item,i)=>!i||Math.abs(item.along-list[i-1].along)>tol*2);for(let i=0;i+1<unique.length;i+=2){const pair=[unique[i].point,unique[i+1].point];if(distance(pair[0],pair[1])<=tol)continue;clipPolylineByBridges(pair,false,obj,otherBridges).runs.forEach(run=>rails.push(run))}});return rails;
+  }
+  function rotateTransform(obj){return obj.rotation?` transform="rotate(${round(obj.rotation)} ${round(obj.x+obj.w/2)} ${round(obj.y+obj.h/2)})"`:''}
+  function opStyle(obj,mode='ui'){
+    const color=mode==='mask'?'#000':mode==='export'?COLORS[obj.operation]:UI_COLORS[obj.operation];
+    const kerf=state.doc.kerf||.15;
+    if(obj.operation==='cut')return `fill="none" stroke="${color}" stroke-width="${round(mode==='mask'?(state._maskStroke||kerf):Math.max(.12,kerf))}" stroke-linecap="round" stroke-linejoin="round"`;
+    if(obj.operation==='score')return `fill="none" stroke="${color}" stroke-width="${mode==='export'?'.12':'.22'}" stroke-linecap="round" stroke-linejoin="round"`;
+    if(obj.engraveMode==='both')return `fill="${color}" fill-rule="evenodd" stroke="${color}" stroke-width="${mode==='export'?'.14':'.22'}" stroke-linecap="round" stroke-linejoin="round"`;
+    if(obj.engraveMode==='line'||obj.type==='path'||(obj.type==='shape'&&obj.shape==='line'))return `fill="none" stroke="${color}" stroke-width="${mode==='export'?'.16':'.25'}" stroke-linecap="round" stroke-linejoin="round"`;
+    return `fill="${color}" fill-rule="evenodd" stroke="none"`;
+  }
+  function geometryMarkup(obj,mode='ui',hit=false){
+    if(obj.type==='bridge'){
+      if(mode!=='ui')return '';const transform=rotateTransform(obj),label=obj.w>9?`<text class="bridge-label" x="${round(obj.x+obj.w/2)}" y="${round(obj.y+obj.h/2)}">UNCUT</text>`:'';
+      return `<g${transform}><rect class="bridge-body" x="${round(obj.x)}" y="${round(obj.y)}" width="${round(obj.w)}" height="${round(obj.h)}" rx="${round(Math.min(obj.h/2,.8))}"/><line class="bridge-center" x1="${round(obj.x)}" y1="${round(obj.y+obj.h/2)}" x2="${round(obj.x+obj.w)}" y2="${round(obj.y+obj.h/2)}"/>${label}</g>`;
+    }
+    const style=opStyle(obj,mode),transform=rotateTransform(obj);let inner='';
+    if(obj.type==='import'&&!(obj.operation==='cut'&&obj.cutLoops?.length)){
+      const vb=obj.sourceViewBox||{x:0,y:0,w:obj.w,h:obj.h},sx=obj.w/vb.w,sy=obj.h/vb.h;
+      inner=`<g transform="translate(${round(obj.x)} ${round(obj.y)}) scale(${round(sx,6)} ${round(sy,6)}) translate(${-vb.x} ${-vb.y})" ${style}>${obj.markup||''}</g>`;
+    }else{
+      const loops=objectLoops(obj),parts=[];
+      if(obj.operation==='engrave'&&obj.engraveMode!=='line'&&loops.length){inner=`<path d="${loops.map((loop,index)=>pathData(loop,loopIsClosed(obj,index))).join(' ')}" ${style}/>`;return `<g${transform}>${inner}</g>`}
+      const bridges=obj.operation==='cut'?activeBridges():[];
+      loops.forEach((loop,index)=>{
+        const closed=loopIsClosed(obj,index),seeds=obj.operation==='cut'&&obj.tabCount>0&&closed&&loops.length===1?tabbedPointRuns(loop,obj.tabCount,obj.tabWidth||1):[{points:loop,closed}];
+        seeds.forEach(seed=>clipPolylineByBridges(seed.points,seed.closed,obj,bridges).runs.forEach(run=>parts.push(`<path d="${pathData(run.points,run.closed)}" ${style}/>`)));
+      });if(obj.operation==='cut')bridges.forEach(br=>bridgeRailRuns(obj,br,bridges.filter(other=>other!==br)).forEach(run=>parts.push(`<path d="${pathData(run.points,false)}" ${style}/>`)));inner=parts.join('');
+    }
+    let hitMarkup='';
+    if(hit&&mode==='ui')hitMarkup=`<rect x="${round(obj.x)}" y="${round(obj.y)}" width="${round(Math.max(.2,obj.w))}" height="${round(Math.max(.2,obj.h))}" fill="transparent" stroke="transparent" stroke-width="2" pointer-events="all"/>`;
+    return `<g${transform}>${inner}${hitMarkup}</g>`;
+  }
+  function objectMarkup(obj,mode='ui',interactive=true){
+    if(!obj.visible&&mode==='ui')return '';
+    if(obj.type==='bridge'&&mode!=='ui')return '';
+    const opacity=obj.visible===false?0:1,attrs=interactive?` data-object="${obj.id}" data-operation="${obj.operation}"`:` id="${obj.id}" data-name="${esc(obj.name||obj.id)}"`;
+    return `<g${attrs} opacity="${opacity}" style="${interactive?(obj.locked?'cursor:not-allowed':'cursor:move'):'pointer-events:none'}">${geometryMarkup(obj,mode,interactive&&!obj.locked)}</g>`;
+  }
+  function renderObjects(){objectLayer.innerHTML=state.objects.map(o=>objectMarkup(o,'ui',true)).join('')}
+  function rotatedCorners(obj){const c={x:obj.x+obj.w/2,y:obj.y+obj.h/2},a=(obj.rotation||0)*Math.PI/180;return [{x:obj.x,y:obj.y},{x:obj.x+obj.w,y:obj.y},{x:obj.x+obj.w,y:obj.y+obj.h},{x:obj.x,y:obj.y+obj.h}].map(p=>({x:c.x+(p.x-c.x)*Math.cos(a)-(p.y-c.y)*Math.sin(a),y:c.y+(p.x-c.x)*Math.sin(a)+(p.y-c.y)*Math.cos(a)}))}
+  function boundsOf(objects){
+    if(!objects.length)return null;const pts=objects.flatMap(rotatedCorners);return {x:Math.min(...pts.map(p=>p.x)),y:Math.min(...pts.map(p=>p.y)),w:Math.max(...pts.map(p=>p.x))-Math.min(...pts.map(p=>p.x)),h:Math.max(...pts.map(p=>p.y))-Math.min(...pts.map(p=>p.y))};
+  }
+  function renderOverlay(){
+    const selected=state.selection.map(id=>state.objects.find(o=>o.id===id)).filter(Boolean);let html='';
+    if(state.drawPreview)html+=state.drawPreview;
+    if(selected.length===1){
+      const o=selected[0],size=Math.max(1.4,state.camera.w/110),r=size*.55,cx=o.x+o.w/2;
+      html+=`<g transform="rotate(${round(o.rotation||0)} ${round(cx)} ${round(o.y+o.h/2)})"><rect class="selection-box" x="${round(o.x)}" y="${round(o.y)}" width="${round(o.w)}" height="${round(o.h)}"/><line class="rotation-line" x1="${round(cx)}" y1="${round(o.y)}" x2="${round(cx)}" y2="${round(o.y-size*4)}"/><circle class="rotate-handle" data-handle="rotate" cx="${round(cx)}" cy="${round(o.y-size*4)}" r="${round(r)}"/><rect class="selection-handle" data-handle="nw" x="${round(o.x-r)}" y="${round(o.y-r)}" width="${round(size)}" height="${round(size)}" rx="${round(r*.2)}"/><rect class="selection-handle" data-handle="ne" x="${round(o.x+o.w-r)}" y="${round(o.y-r)}" width="${round(size)}" height="${round(size)}" rx="${round(r*.2)}"/><rect class="selection-handle" data-handle="se" x="${round(o.x+o.w-r)}" y="${round(o.y+o.h-r)}" width="${round(size)}" height="${round(size)}" rx="${round(r*.2)}"/><rect class="selection-handle" data-handle="sw" x="${round(o.x-r)}" y="${round(o.y+o.h-r)}" width="${round(size)}" height="${round(size)}" rx="${round(r*.2)}"/></g>`;
+      if(state.tool==='node'&&o.type==='path'){const pts=objectLoops(o)[0]||[];html+=`<g transform="rotate(${round(o.rotation||0)} ${round(cx)} ${round(o.y+o.h/2)})">${pts.map((p,i)=>`<circle data-node="${i}" cx="${round(p.x)}" cy="${round(p.y)}" r="${round(r*.72)}" fill="#fff" stroke="#ff8f3d" stroke-width="1" vector-effect="non-scaling-stroke" style="cursor:move"/>`).join('')}</g>`}
+    }else if(selected.length>1){const b=boundsOf(selected);html+=`<rect class="selection-box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/>`}
+    overlayLayer.innerHTML=html;
+  }
+  function renderBoard(){
+    ['artboardShadow','gridRect','artboardEdge'].forEach(id=>{const e=$('#'+id);e.setAttribute('width',state.doc.w);e.setAttribute('height',state.doc.h)});
+    $('#gridRect').style.display=state.showGrid?'':'none';
+    $('#majorGrid').setAttribute('width',state.doc.grid);$('#majorGrid').setAttribute('height',state.doc.grid);
+  }
+  function renderStatus(){
+    const bridgeCount=state.objects.filter(o=>o.type==='bridge').length,artCount=state.objects.length-bridgeCount;$('#objectStatus').textContent=`${artCount} object${artCount===1?'':'s'}${bridgeCount?` · ${bridgeCount} bridge${bridgeCount===1?'':'s'}`:''}`;
+    $('#docStatus').textContent=`${round(state.doc.w,1)} × ${round(state.doc.h,1)} mm`;
+    $('#selectionStatus').textContent=state.selection.length?`${state.selection.length} selected`:'Nothing selected';
+    $('#undoBtn').disabled=!state.undo.length;$('#redoBtn').disabled=!state.redo.length;
+    $('#emptyState').classList.toggle('hidden',artCount>0||state.view!=='design');
+  }
+  function renderAll(){
+    cancelAnimationFrame(renderRaf);renderRaf=requestAnimationFrame(()=>{renderBoard();renderObjects();renderOverlay();renderStatus();renderProperties();renderLayers();renderPreflight();scheduleSimulation();autosave()});
+  }
+  function renderViewBox(){editorSvg.setAttribute('viewBox',`${state.camera.x} ${state.camera.y} ${state.camera.w} ${state.camera.h}`);updateZoomReadout();renderOverlay()}
+  function fitView(){
+    const r=stage.getBoundingClientRect(),pad=Math.max(8,Math.min(state.doc.w,state.doc.h)*.09),contentW=state.doc.w+pad*2,contentH=state.doc.h+pad*2,aspect=(r.width||800)/(r.height||600);let w=contentW,h=contentH;
+    if(w/h<aspect)w=h*aspect;else h=w/aspect;state.camera={x:(state.doc.w-w)/2,y:(state.doc.h-h)/2,w,h};state.fitCamera=deep(state.camera);renderViewBox();
+  }
+  function zoom(factor,anchor){
+    const old=state.camera;if(!anchor)anchor={x:old.x+old.w/2,y:old.y+old.h/2};const nw=clamp(old.w*factor,Math.max(2,state.doc.w/50),state.doc.w*12),ratio=nw/old.w,nh=old.h*ratio;
+    state.camera={x:anchor.x-(anchor.x-old.x)*ratio,y:anchor.y-(anchor.y-old.y)*ratio,w:nw,h:nh};renderViewBox();
+  }
+  function zoomCurrent(factor,anchor){if(state.view==='preview'){state.previewScale=clamp(state.previewScale/factor,.2,8);paintSimulation();updateZoomReadout()}else zoom(factor,anchor)}
+  function fitCurrent(){if(state.view==='preview'){state.previewScale=1;paintSimulation();updateZoomReadout()}else fitView()}
+  function updateZoomReadout(){const p=state.view==='preview'?Math.round(state.previewScale*100):Math.round((state.fitCamera?.w||state.camera.w)/state.camera.w*100);$('#zoomReadout').textContent=`${p}%`}
+  function clientPoint(evt){const p=editorSvg.createSVGPoint();p.x=evt.clientX;p.y=evt.clientY;const m=editorSvg.getScreenCTM();if(!m)return{x:0,y:0};const q=p.matrixTransform(m.inverse());return{x:q.x,y:q.y}}
+  function snapValue(v){return state.snap?Math.round(v/(state.doc.grid||1))*(state.doc.grid||1):v}
+  function inBoard(p){return p.x>=0&&p.y>=0&&p.x<=state.doc.w&&p.y<=state.doc.h}
+  function selectTool(tool){if(tool==='image'){showModal('imageModal');tool='select'}const previous=state.tool;state.tool=tool;$$('.toolbtn[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===tool));editorSvg.style.cursor=tool==='pan'?'grab':tool==='select'?'default':'crosshair';if(tool==='bridge'&&previous!=='bridge')toast('<b>Bridge tool:</b> drag from surrounding material into the island. Hold Shift for a 45° angle, then check Material preview.','good',4800)}
+
+  function baseObject(type,name,x,y,w,h,operation='cut'){return{id:uid(),type,name,operation,engraveMode:'fill',x:round(x),y:round(y),w:round(Math.max(.1,w)),h:round(Math.max(.1,h)),rotation:0,visible:true,locked:false,lockAspect:false,tabCount:0,tabWidth:1}}
+  function shapeObject(shape,x,y,w,h,operation='cut',name){
+    if(shape==='line'){const ex=x+w,ey=y+h,bx=Math.min(x,ex),by=Math.min(y,ey),bw=Math.max(.2,Math.abs(w)),bh=Math.max(.2,Math.abs(h)),o=baseObject('shape',name||'Line',bx,by,bw,bh,operation);o.shape='line';o.sides=6;o.lineA={x:(x-bx)/bw,y:(y-by)/bh};o.lineB={x:(ex-bx)/bw,y:(ey-by)/bh};return o}
+    if(w<0){x+=w;w=Math.abs(w)}if(h<0){y+=h;h=Math.abs(h)}const o=baseObject('shape',name||shape[0].toUpperCase()+shape.slice(1),x,y,w,h,operation);o.shape=shape;o.sides=6;return o;
+  }
+  function textObject(text,x,y,height=14,font='sans',operation='engrave',autoStencil=false){
+    const w=height*estimateTextAspect(text,font),o=baseObject('text','Text: '+String(text).replace(/\n/g,' ').slice(0,18),x,y,w,height,operation);o.text=String(text||'TEXT').slice(0,240);o.font=VECTOR_FONTS[font]?font:'sans';o.autoStencil=!!autoStencil||font==='stencil';o.stencilBridge=1.5;o.bridgeDirection='smart';o.engraveMode='fill';return o;
+  }
+  function pathObject(points,closed=false,operation='score'){
+    let minX=Math.min(...points.map(p=>p.x)),maxX=Math.max(...points.map(p=>p.x)),minY=Math.min(...points.map(p=>p.y)),maxY=Math.max(...points.map(p=>p.y));let w=Math.max(.2,maxX-minX),h=Math.max(.2,maxY-minY);
+    const o=baseObject('path',closed?'Closed path':'Open path',minX,minY,w,h,operation);o.points=points.map(p=>({x:(p.x-minX)/w,y:(p.y-minY)/h}));o.closed=closed;o.engraveMode='line';return o;
+  }
+  function vectorObject(loops,x,y,w,h,operation='engrave',name='Traced vector'){
+    const o=baseObject('vector',name,x,y,w,h,operation);o.loops=(loops||[]).map(loop=>({closed:loop.closed!==false,points:(loop.points||loop||[]).map(p=>({x:round(p.x,6),y:round(p.y,6)}))})).filter(loop=>loop.points.length>2);o.engraveMode=operation==='engrave'?'fill':'line';o.lockAspect=true;return o;
+  }
+  function bridgeObject(a,b,width=state.bridgeWidth){
+    const len=Math.max(.2,distance(a,b)),mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2},o=baseObject('bridge',`Holding bridge ${state.objects.filter(x=>x.type==='bridge').length+1}`,mid.x-len/2,mid.y-width/2,len,Math.max(.3,width),'bridge');o.rotation=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;o.lockAspect=false;return o;
+  }
+  function constrainedPoint(a,b,step=45){const len=distance(a,b),angle=Math.atan2(b.y-a.y,b.x-a.x),snap=Math.round(angle/(step*Math.PI/180))*step*Math.PI/180;return{x:a.x+Math.cos(snap)*len,y:a.y+Math.sin(snap)*len}}
+  function simplifyPoints(points,tolerance=.25){
+    if(points.length<3)return points;const sq=tolerance*tolerance;
+    function distSeg(p,a,b){let x=a.x,y=a.y,dx=b.x-x,dy=b.y-y;if(dx||dy){const t=clamp(((p.x-x)*dx+(p.y-y)*dy)/(dx*dx+dy*dy),0,1);x+=dx*t;y+=dy*t}return (p.x-x)**2+(p.y-y)**2}
+    function rdp(a,first,last,out){let max=sq,index=-1;for(let i=first+1;i<last;i++){const d=distSeg(a[i],a[first],a[last]);if(d>max){index=i;max=d}}if(index>0){if(index-first>1)rdp(a,first,index,out);out.push(a[index]);if(last-index>1)rdp(a,index,last,out)}}
+    const out=[points[0]];rdp(points,0,points.length-1,out);out.push(points[points.length-1]);return out;
+  }
+
+  function rotatePoint(p,c,degrees){const a=degrees*Math.PI/180,dx=p.x-c.x,dy=p.y-c.y;return{x:c.x+dx*Math.cos(a)-dy*Math.sin(a),y:c.y+dx*Math.sin(a)+dy*Math.cos(a)}}
+  function beginGesture(evt){
+    if(state.view!=='design')return;const p=clientPoint(evt),handle=evt.target.closest('[data-handle]')?.dataset.handle,nodeIndex=evt.target.closest('[data-node]')?.dataset.node;
+    $('#cursorStatus').textContent=`X ${round(p.x,1)} · Y ${round(p.y,1)} mm`;
+    if(evt.button===1||state.spaceDown||state.tool==='pan'){
+      evt.preventDefault();state.gesture={type:'pan',client:{x:evt.clientX,y:evt.clientY},camera:deep(state.camera)};editorSvg.setPointerCapture(evt.pointerId);editorSvg.style.cursor='grabbing';return;
+    }
+    if(nodeIndex!==undefined&&state.selection.length===1){
+      const o=state.objects.find(x=>x.id===state.selection[0]);if(!o||o.locked||o.type!=='path')return;state.gesture={type:'node',node:Number(nodeIndex),start:p,before:snapshot(),original:deep(o)};editorSvg.setPointerCapture(evt.pointerId);return;
+    }
+    if(handle&&state.selection.length===1){
+      const o=state.objects.find(x=>x.id===state.selection[0]);if(!o||o.locked)return;state.gesture={type:handle==='rotate'?'rotate':'resize',handle,start:p,before:snapshot(),original:deep(o)};editorSvg.setPointerCapture(evt.pointerId);return;
+    }
+    if(state.tool==='bridge'){
+      if(!inBoard(p))return;state.gesture={type:'bridge',start:p,current:p,width:state.bridgeWidth};editorSvg.setPointerCapture(evt.pointerId);return;
+    }
+    if(['rect','ellipse','line','star','polygon'].includes(state.tool)){
+      if(!inBoard(p))return;state.gesture={type:'draw',shape:state.tool,start:p,current:p};editorSvg.setPointerCapture(evt.pointerId);return;
+    }
+    if(state.tool==='pen'){
+      if(!inBoard(p))return;state.gesture={type:'pen',points:[p]};editorSvg.setPointerCapture(evt.pointerId);return;
+    }
+    if(state.tool==='text'){
+      if(!inBoard(p))return;state.textPoint=p;showModal('textModal');return;
+    }
+    const hit=evt.target.closest('[data-object]'),id=hit?.dataset.object;
+    if(state.tool==='node'){
+      if(id){const o=state.objects.find(x=>x.id===id);if(o?.type==='path'){state.selection=[id];renderAll()}else toast('<b>Node editing works on freehand paths.</b> Other SVG objects can still be moved, resized, and rotated.','warn',3400)}return;
+    }
+    if(state.tool!=='select')return;
+    if(id){
+      const o=state.objects.find(x=>x.id===id);if(!o||o.locked)return;
+      if(evt.shiftKey){state.selection=state.selection.includes(id)?state.selection.filter(x=>x!==id):[...state.selection,id]}
+      else if(!state.selection.includes(id))state.selection=[id];
+      state.gesture={type:'move',start:p,before:snapshot(),originals:state.selection.map(s=>deep(state.objects.find(x=>x.id===s)))};editorSvg.setPointerCapture(evt.pointerId);renderAll();
+    }else{state.selection=[];renderAll()}
+  }
+  function moveGesture(evt){
+    const p=clientPoint(evt);$('#cursorStatus').textContent=`X ${round(p.x,1)} · Y ${round(p.y,1)} mm`;const g=state.gesture;if(!g)return;
+    if(g.type==='pan'){
+      const r=stage.getBoundingClientRect(),dx=(evt.clientX-g.client.x)*g.camera.w/r.width,dy=(evt.clientY-g.client.y)*g.camera.h/r.height;state.camera={...g.camera,x:g.camera.x-dx,y:g.camera.y-dy};renderViewBox();return;
+    }
+    if(g.type==='draw'){
+      g.current=p;let x=Math.min(g.start.x,p.x),y=Math.min(g.start.y,p.y),w=Math.abs(p.x-g.start.x),h=Math.abs(p.y-g.start.y);if(evt.shiftKey){const s=Math.max(w,h);w=h=s;x=p.x<g.start.x?g.start.x-s:g.start.x;y=p.y<g.start.y?g.start.y-s:g.start.y}
+      let d='';if(g.shape==='ellipse')d=`<ellipse class="drawing-preview" cx="${x+w/2}" cy="${y+h/2}" rx="${w/2}" ry="${h/2}"/>`;else if(g.shape==='line')d=`<path class="drawing-preview" d="M${g.start.x} ${g.start.y}L${p.x} ${p.y}"/>`;else if(g.shape==='star'||g.shape==='polygon'){const o=shapeObject(g.shape,x,y,w,h),pts=g.shape==='star'?regularPolygon(o,5,.43):regularPolygon(o,6);d=`<path class="drawing-preview" d="${pathData(pts,true)}"/>`}else d=`<rect class="drawing-preview" x="${x}" y="${y}" width="${w}" height="${h}"/>`;state.drawPreview=d;renderOverlay();return;
+    }
+    if(g.type==='bridge'){
+      g.current=evt.shiftKey?constrainedPoint(g.start,p):p;const preview=bridgeObject(g.start,g.current,g.width);state.drawPreview=geometryMarkup(preview,'ui',false);renderOverlay();return;
+    }
+    if(g.type==='pen'){
+      const last=g.points[g.points.length-1];if(distance(last,p)>state.camera.w/500)g.points.push(p);state.drawPreview=`<path class="drawing-preview" d="${pathData(g.points,false)}"/>`;renderOverlay();return;
+    }
+    if(g.type==='move'){
+      let dx=p.x-g.start.x,dy=p.y-g.start.y;if(state.snap&&g.originals.length){const first=g.originals[0];dx=snapValue(first.x+dx)-first.x;dy=snapValue(first.y+dy)-first.y}
+      g.originals.forEach(orig=>{const o=state.objects.find(x=>x.id===orig.id);o.x=round(orig.x+dx);o.y=round(orig.y+dy)});requestRenderLight();return;
+    }
+    if(g.type==='node'){
+      const o=state.objects.find(x=>x.id===g.original.id),c={x:o.x+o.w/2,y:o.y+o.h/2},q=rotatePoint(p,c,-(o.rotation||0)),pt=o.points[g.node];pt.x=clamp((q.x-o.x)/o.w,-2,3);pt.y=clamp((q.y-o.y)/o.h,-2,3);requestRenderLight();return;
+    }
+    if(g.type==='rotate'){
+      const o=state.objects.find(x=>x.id===g.original.id),c={x:g.original.x+g.original.w/2,y:g.original.y+g.original.h/2},a=Math.atan2(p.y-c.y,p.x-c.x)*180/Math.PI+90;o.rotation=round(evt.shiftKey?Math.round(a/15)*15:a,1);requestRenderLight();return;
+    }
+    if(g.type==='resize'){
+      const o=state.objects.find(x=>x.id===g.original.id),c={x:g.original.x+g.original.w/2,y:g.original.y+g.original.h/2},q=rotatePoint(p,c,-(g.original.rotation||0)),op=g.original;let left=op.x,right=op.x+op.w,top=op.y,bottom=op.y+op.h;
+      if(g.handle.includes('w'))left=q.x;else right=q.x;if(g.handle.includes('n'))top=q.y;else bottom=q.y;
+      let w=Math.max(.5,Math.abs(right-left)),h=Math.max(.5,Math.abs(bottom-top));if(evt.shiftKey||op.lockAspect){const ratio=op.w/op.h;if(w/h>ratio)h=w/ratio;else w=h*ratio}
+      o.x=round(Math.min(left,right));o.y=round(Math.min(top,bottom));o.w=round(w);o.h=round(h);requestRenderLight();
+    }
+  }
+  function endGesture(evt){
+    const g=state.gesture;if(!g)return;state.gesture=null;state.drawPreview=null;editorSvg.style.cursor=state.tool==='pan'?'grab':state.tool==='select'?'default':'crosshair';
+    if(g.type==='draw'){
+      const p=g.current||g.start;let x=Math.min(g.start.x,p.x),y=Math.min(g.start.y,p.y),w=Math.abs(p.x-g.start.x),h=Math.abs(p.y-g.start.y);if(evt.shiftKey){const s=Math.max(w,h);w=h=s;x=p.x<g.start.x?g.start.x-s:g.start.x;y=p.y<g.start.y?g.start.y-s:g.start.y}if(w>.4||h>.4){
+        const before=snapshot(),op=g.shape==='line'?'score':'cut',o=g.shape==='line'?shapeObject('line',g.start.x,g.start.y,p.x-g.start.x,p.y-g.start.y,op):shapeObject(g.shape,x,y,Math.max(.2,w),Math.max(.2,h),op);state.objects.push(o);state.selection=[o.id];pushUndo(before,'Add '+g.shape);
+      }
+    }else if(g.type==='bridge'){
+      const p=g.current||g.start;if(distance(g.start,p)>.6){const before=snapshot(),o=bridgeObject(g.start,p,g.width);state.objects.push(o);state.selection=[o.id];pushUndo(before,'Add holding bridge');toast('<b>Uncut bridge added.</b> Drag it across every red contour between the surrounding sheet and the island, then verify the fallout preview.','good',5000)}
+    }else if(g.type==='pen'){
+      let pts=simplifyPoints(g.points,Math.max(.08,state.camera.w/1500));if(pts.length>2){const close=distance(pts[0],pts[pts.length-1])<Math.max(2,state.camera.w/45);if(close)pts.pop();const before=snapshot(),o=pathObject(pts,close,close?'cut':'score');state.objects.push(o);state.selection=[o.id];pushUndo(before,'Draw path')}
+    }else if(['move','resize','rotate','node'].includes(g.type))pushUndo(g.before,g.type==='node'?'Edit path point':g.type[0].toUpperCase()+g.type.slice(1)+' object');
+    renderAll();
+  }
+  function requestRenderLight(){cancelAnimationFrame(renderRaf);renderRaf=requestAnimationFrame(()=>{renderObjects();renderOverlay();renderProperties();renderStatus()})}
+
+  function renderProperties(){
+    const root=$('#propertiesView'),sel=state.selection.map(id=>state.objects.find(o=>o.id===id)).filter(Boolean);
+    if(!sel.length){
+      root.innerHTML=`<div class="section"><div class="section-title">Material workspace</div><div class="section-body"><div class="field-row"><div class="field suffix"><label>Width</label><input data-doc="w" type="number" min="10" max="1000" step="1" value="${round(state.doc.w,2)}"><span>mm</span></div><div class="field suffix"><label>Height</label><input data-doc="h" type="number" min="10" max="1000" step="1" value="${round(state.doc.h,2)}"><span>mm</span></div></div><div class="field"><label>Material preview</label><select data-doc="material"><option ${state.doc.material==='Basswood'?'selected':''}>Basswood</option><option ${state.doc.material==='Walnut'?'selected':''}>Walnut</option><option ${state.doc.material==='Acrylic'?'selected':''}>Acrylic</option><option ${state.doc.material==='Cardboard'?'selected':''}>Cardboard</option><option ${state.doc.material==='Leather'?'selected':''}>Leather</option></select></div><div class="field-row"><div class="field suffix"><label>Thickness</label><input data-doc="thickness" type="number" min=".1" max="30" step=".1" value="${round(state.doc.thickness,2)}"><span>mm</span></div><div class="field suffix"><label>Kerf preview</label><input data-doc="kerf" type="number" min=".02" max="2" step=".01" value="${round(state.doc.kerf,2)}"><span>mm</span></div></div><div class="field suffix"><label>Grid spacing</label><input data-doc="grid" type="number" min=".5" max="50" step=".5" value="${round(state.doc.grid,2)}"><span>mm</span></div></div></div><div class="section"><div class="section-title">How fallout works</div><div class="section-body section-note">CutCraft rasterizes every red cut as a physical barrier, then traces material connected to all four sheet edges. Any enclosed region without a bridge is marked loose—even nested letter counters and islands.</div></div>`;
+    }else if(sel.length>1){
+      root.innerHTML=`<div class="section"><div class="section-title">${sel.length} objects selected</div><div class="section-body"><div class="field"><label>Set operation</label><div class="op-picker">${['engrave','score','cut'].map(op=>`<button class="op-btn" data-multi-op="${op}">${operationLabel(op)}</button>`).join('')}</div></div><div class="action-row"><button class="btn compact" data-action="group-align-left">Align left</button><button class="btn compact" data-action="group-align-center">Center</button><button class="btn compact" data-action="duplicate">Duplicate</button><button class="btn compact danger" data-action="delete">Delete</button></div></div></div>`;
+    }else if(sel[0].type==='bridge'){
+      const o=sel[0],used=state.objects.some(c=>c.visible!==false&&bridgeIntersectsCut(o,c));
+      root.innerHTML=`<div class="section"><div class="section-title">Uncut holding bridge <span>${used?'crossing cut':'move onto cut'}</span></div><div class="section-body"><div class="field"><label>Name</label><input data-prop="name" value="${esc(o.name)}"></div><div class="field-row"><div class="field suffix"><label>Bridge length</label><input data-prop="w" type="number" min=".2" max="1000" step=".1" value="${round(o.w,2)}"><span>mm</span></div><div class="field suffix"><label>Finished width</label><input data-prop="h" type="number" min=".3" max="10" step=".1" value="${round(o.h,2)}"><span>mm</span></div></div><div class="section-note">The green helper is not exported. It rebuilds the red contours around a solid branch, with kerf compensation, so the entered width is approximately the material left behind. Drag through every red contour separating the surrounding material from the island.</div></div></div><div class="section"><div class="section-title">Position & angle</div><div class="section-body"><div class="field-row"><div class="field suffix"><label>X</label><input data-prop="x" type="number" step=".1" value="${round(o.x,2)}"><span>mm</span></div><div class="field suffix"><label>Y</label><input data-prop="y" type="number" step=".1" value="${round(o.y,2)}"><span>mm</span></div></div><div class="field suffix"><label>Rotation</label><input data-prop="rotation" type="number" step="1" value="${round(o.rotation||0,1)}"><span>°</span></div></div></div><div class="section"><div class="section-title">Bridge actions</div><div class="section-body"><div class="action-row"><button class="btn compact" data-action="duplicate">Duplicate</button><button class="btn compact danger" data-action="delete">Delete</button></div></div></div>`;
+    }else{
+      const o=sel[0],tabsEligible=o.operation==='cut'&&isClosed(o)&&!['text','import','vector'].includes(o.type);
+      root.innerHTML=`<div class="section"><div class="section-title">Object</div><div class="section-body"><div class="field"><label>Name</label><input data-prop="name" value="${esc(o.name)}"></div><div class="field"><label>Laser operation</label><div class="op-picker">${['engrave','score','cut'].map(op=>`<button class="op-btn ${o.operation===op?'active':''}" data-op="${op}">${operationLabel(op)}</button>`).join('')}</div></div>${o.operation==='engrave'?`<div class="field"><label>Engraving style</label><select data-prop="engraveMode">${o.type==='import'?`<option value="both" ${o.engraveMode==='both'?'selected':''}>Preserve fills + lines</option>`:''}<option value="fill" ${o.engraveMode==='fill'?'selected':''}>Solid fill</option><option value="line" ${o.engraveMode==='line'?'selected':''}>Line engraving</option></select></div>`:''}</div></div><div class="section"><div class="section-title">Transform</div><div class="section-body"><div class="field-row"><div class="field suffix"><label>X</label><input data-prop="x" type="number" step=".1" value="${round(o.x,2)}"><span>mm</span></div><div class="field suffix"><label>Y</label><input data-prop="y" type="number" step=".1" value="${round(o.y,2)}"><span>mm</span></div></div><div class="field-row"><div class="field suffix"><label>Width</label><input data-prop="w" type="number" min=".1" step=".1" value="${round(o.w,2)}"><span>mm</span></div><div class="field suffix"><label>Height</label><input data-prop="h" type="number" min=".1" step=".1" value="${round(o.h,2)}"><span>mm</span></div></div><div class="field suffix"><label>Rotation</label><input data-prop="rotation" type="number" step="1" value="${round(o.rotation||0,1)}"><span>°</span></div><div class="checkrow"><span>Lock aspect ratio</span><div class="switch ${o.lockAspect?'on':''}" data-toggle="lockAspect" role="switch"></div></div></div></div>${o.type==='shape'?shapeInspector(o):''}${o.type==='text'?textInspector(o):''}${o.type==='path'?pathInspector(o):''}${o.type==='vector'?vectorInspector(o):''}${tabsEligible?tabsInspector(o):''}<div class="section"><div class="section-title">Arrange & edit</div><div class="section-body"><div class="action-row"><button class="btn compact" data-action="duplicate">Duplicate</button><button class="btn compact" data-action="front">To front</button><button class="btn compact" data-action="back">To back</button><button class="btn compact danger" data-action="delete">Delete</button></div></div></div>`;
+    }
+    bindPropertyEvents(root);
+  }
+  function fontOptions(selected){return Object.entries(VECTOR_FONTS).map(([id,f])=>`<option value="${id}" ${selected===id?'selected':''}>${esc(f.label)}</option>`).join('')}
+  function textInspector(o){return `<div class="section"><div class="section-title">Outlined text <span>100% paths</span></div><div class="section-body"><div class="field"><label>Content</label><textarea data-prop="text">${esc(o.text)}</textarea></div><div class="field"><label>Font style</label><select data-prop="font">${fontOptions(o.font)}</select></div><div class="checkrow"><span>Protect counters with auto-bridges</span><div class="switch ${o.autoStencil?'on':''}" data-toggle="autoStencil" role="switch"></div></div>${o.autoStencil?`<div class="field-row"><div class="field suffix"><label>Bridge thickness</label><input data-prop="stencilBridge" type="number" min=".3" max="10" step=".1" value="${round(o.stencilBridge||1.5,2)}"><span>mm</span></div><div class="field"><label>Bridge direction</label><select data-prop="bridgeDirection"><option value="smart" ${o.bridgeDirection==='smart'?'selected':''}>Smart</option><option value="horizontal" ${o.bridgeDirection==='horizontal'?'selected':''}>Horizontal</option><option value="vertical" ${o.bridgeDirection==='vertical'?'selected':''}>Vertical</option></select></div></div>`:''}<div class="section-note">Normal browser fonts are sampled at high resolution and converted to compound contours. The exact generated outlines are stored with the project, so export never depends on a font file.</div></div></div>`}
+  function vectorInspector(o){const paths=o.loops?.length||0,points=(o.loops||[]).reduce((n,l)=>n+(l.points?.length||0),0);return `<div class="section"><div class="section-title">Image trace <span>${paths} paths</span></div><div class="section-body section-note">This traced image is ${points.toLocaleString()} editable vector points—not an embedded photo. Resize, rotate, duplicate, or switch its laser operation above.</div></div>`}
+  function shapeInspector(o){if(o.shape==='rect')return `<div class="section"><div class="section-title">Rectangle geometry</div><div class="section-body"><div class="field suffix"><label>Corner radius</label><input data-prop="rx" type="number" min="0" max="${round(Math.min(o.w,o.h)/2,2)}" step=".25" value="${round(o.rx||0,2)}"><span>mm</span></div></div></div>`;if(o.shape==='polygon')return `<div class="section"><div class="section-title">Polygon geometry</div><div class="section-body"><div class="field"><label>Number of sides</label><input data-prop="sides" type="number" min="3" max="24" step="1" value="${o.sides||6}"></div></div></div>`;return ''}
+  function pathInspector(o){return `<div class="section"><div class="section-title">Path</div><div class="section-body"><div class="checkrow"><span>Close path for a cutout</span><div class="switch ${o.closed?'on':''}" data-toggle="closed" role="switch"></div></div><div class="section-note">A path must form an unbroken loop before material can become a loose piece.</div></div></div>`}
+  function tabsInspector(o){return `<div class="section"><div class="section-title">Holding tabs / bridges</div><div class="section-body"><div class="field-row"><div class="field"><label>Tab count</label><input data-prop="tabCount" type="number" min="0" max="12" step="1" value="${o.tabCount||0}"></div><div class="field suffix"><label>Tab width</label><input data-prop="tabWidth" type="number" min=".2" max="10" step=".1" value="${o.tabWidth||1}"><span>mm</span></div></div><div class="section-note">Tabs are exported as real gaps in the cut path, so the part remains attached. Use the material preview to verify them.</div></div></div>`}
+  function bindPropertyEvents(root){
+    $$('[data-doc]',root).forEach(el=>el.addEventListener('change',()=>{const k=el.dataset.doc,before=snapshot(),num=['w','h','thickness','kerf','grid'].includes(k);state.doc[k]=num?Number(el.value):el.value;if(k==='w'||k==='h')fitView();pushUndo(before,'Change material setup');renderAll()}));
+    $$('[data-prop]',root).forEach(el=>el.addEventListener('change',()=>{const o=state.objects.find(x=>x.id===state.selection[0]);if(!o)return;const before=snapshot(),k=el.dataset.prop,num=['x','y','w','h','rotation','tabCount','tabWidth','rx','sides','stencilBridge'].includes(k);o[k]=num?Number(el.value):el.value;if(['w','h'].includes(k))o[k]=o.type==='bridge'?(k==='h'?clamp(o[k],.3,10):clamp(o[k],.2,1000)):Math.max(.1,o[k]);if(o.type==='bridge'&&k==='h')state.bridgeWidth=o.h;if(k==='tabCount')o[k]=clamp(Math.round(o[k]),0,12);if(k==='sides')o[k]=clamp(Math.round(o[k]),3,24);if(k==='rx')o[k]=clamp(o[k],0,Math.min(o.w,o.h)/2);if(k==='stencilBridge')o[k]=clamp(o[k],.3,10);if(k==='font'&&o.font==='stencil')o.autoStencil=true;if(['text','font','stencilBridge','bridgeDirection'].includes(k)){delete o.vectorKey;if(k==='text')o.name='Text: '+o.text.replace(/\n/g,' ').slice(0,18)}pushUndo(before,'Edit '+(o.name||'object'));renderAll()}));
+    $$('[data-op]',root).forEach(el=>el.addEventListener('click',()=>mutate('Change operation',()=>{const o=state.objects.find(x=>x.id===state.selection[0]);o.operation=el.dataset.op;if(o.operation==='engrave'&&o.type==='path')o.engraveMode='line'})));
+    $$('[data-multi-op]',root).forEach(el=>el.addEventListener('click',()=>mutate('Change operations',()=>state.selection.forEach(id=>{const o=state.objects.find(x=>x.id===id);if(o&&o.type!=='bridge')o.operation=el.dataset.multiOp}))));
+    $$('[data-toggle]',root).forEach(el=>el.addEventListener('click',()=>mutate('Toggle '+el.dataset.toggle,()=>{const o=state.objects.find(x=>x.id===state.selection[0]);o[el.dataset.toggle]=!o[el.dataset.toggle];if(el.dataset.toggle==='autoStencil')delete o.vectorKey})));
+    $$('[data-action]',root).forEach(el=>el.addEventListener('click',()=>objectAction(el.dataset.action)));
+  }
+  function renderLayers(){
+    const root=$('#layersView');root.innerHTML=`<div class="legend"><div class="legend-item"><b><i class="layer-dot" style="background:var(--engrave)"></i>Engrave</b><small>black</small></div><div class="legend-item"><b><i class="layer-dot" style="background:var(--score)"></i>Score</b><small>blue</small></div><div class="legend-item"><b><i class="layer-dot" style="background:var(--cut)"></i>Cut</b><small>red</small></div><div class="legend-item"><b><i class="layer-dot" style="background:var(--good)"></i>Bridge</b><small>uncut helper</small></div></div><div class="layer-list">${[...state.objects].reverse().map(o=>`<div class="layer-row ${state.selection.includes(o.id)?'selected':''}" data-layer="${o.id}"><div class="layer-icon"><i class="layer-dot" style="background:${UI_COLORS[o.operation]}"></i></div><div class="layer-main"><div class="layer-name">${esc(o.name)}</div><div class="layer-meta">${operationLabel(o.operation)} · ${o.type}</div></div><button class="mini-icon" data-vis="${o.id}" title="${o.visible?'Hide':'Show'}"><svg viewBox="0 0 24 24"><path d="M3 12s3-5 9-5 9 5 9 5-3 5-9 5-9-5-9-5Z"/><circle cx="12" cy="12" r="2.5"/>${o.visible?'':'<path d="M4 4l16 16"/>'}</svg></button><button class="mini-icon" data-lock="${o.id}" title="${o.locked?'Unlock':'Lock'}"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></button></div>`).join('')}</div>${state.objects.length?'':'<div class="section-note" style="text-align:center;padding:30px 10px">Objects appear here as you draw or import them.</div>'}`;
+    $$('[data-layer]',root).forEach(row=>row.addEventListener('click',e=>{if(e.target.closest('button'))return;const id=row.dataset.layer;state.selection=e.shiftKey?[...new Set([...state.selection,id])]:[id];state.side='properties';setSideTab('properties');renderAll()}));
+    $$('[data-vis]',root).forEach(b=>b.addEventListener('click',()=>mutate('Toggle visibility',()=>{const o=state.objects.find(x=>x.id===b.dataset.vis);o.visible=!o.visible})));
+    $$('[data-lock]',root).forEach(b=>b.addEventListener('click',()=>mutate('Toggle lock',()=>{const o=state.objects.find(x=>x.id===b.dataset.lock);o.locked=!o.locked})));
+  }
+  function runPreflight(){
+    const checks=[],bridges=state.objects.filter(o=>o.visible!==false&&o.type==='bridge'),visible=state.objects.filter(o=>o.visible!==false&&o.type!=='bridge'),cuts=visible.filter(o=>o.operation==='cut');
+    if(visible.length)checks.push({level:'pass',title:`${visible.length} exportable vector object${visible.length===1?'':'s'}`,detail:'All CutCraft text is converted to geometry; no live font dependency.'});else checks.push({level:'error',title:'Canvas is empty',detail:'Add, generate, or import at least one object before export.'});
+    const open=cuts.filter(o=>!isClosed(o));if(open.length)checks.push({level:'warn',title:`${open.length} open cut path${open.length===1?'':'s'}`,detail:'Open paths make slits but cannot release a closed piece.'});else if(cuts.length)checks.push({level:'pass',title:'Cut contours are closed',detail:'All cut objects intended as shapes form closed contours or tabbed paths.'});
+    const risky=cuts.filter(o=>o.type==='text'&&!o.autoStencil&&/[ABDOPQR04689]/i.test(o.text));if(risky.length)checks.push({level:'warn',title:'Cut-text counters need preview review',detail:'Turn on automatic counter bridges or add green manual bridges so enclosed centers stay attached.'});
+    if(bridges.length){const used=bridges.filter(br=>cuts.some(c=>bridgeIntersectsCut(br,c))),unused=bridges.length-used.length;if(used.length)checks.push({level:'pass',title:`${used.length} manual holding bridge${used.length===1?'':'s'} applied`,detail:'These helpers rebuild intersected red contours as physical, kerf-aware stencil branches.'});if(unused)checks.push({level:'warn',title:`${unused} holding bridge${unused===1?' does':'s do'} not cross a cut`,detail:'Move or lengthen each green bridge until it crosses every red contour between the surrounding material and the island.'})}
+    const importedCuts=cuts.filter(o=>o.type==='import'),untracedImports=importedCuts.filter(o=>!o.cutLoops?.length);if(untracedImports.length)checks.push({level:'warn',title:'Imported cut group needs visual confirmation',detail:'No editable contour trace was available, so manual bridges cannot alter this group. Use the material preview and inspect the exported SVG.'});else if(importedCuts.length)checks.push({level:'pass',title:'Imported cut contours support bridges',detail:'Imported vector geometry was normalized into physical paths for cut gaps and fallout analysis.'});
+    const outside=visible.filter(o=>{const b=boundsOf([o]);return b.x<0||b.y<0||b.x+b.w>state.doc.w||b.y+b.h>state.doc.h});if(outside.length)checks.push({level:'warn',title:`${outside.length} object${outside.length===1?' extends':'s extend'} beyond the material`,detail:'Anything outside the millimeter viewBox may be clipped on import.'});else if(visible.length)checks.push({level:'pass',title:'Everything is inside the material',detail:`Artwork fits the ${round(state.doc.w,1)} × ${round(state.doc.h,1)} mm workspace.`});
+    const tiny=visible.filter(o=>Math.min(Math.abs(o.w),Math.abs(o.h))<state.doc.kerf*1.75);if(tiny.length)checks.push({level:'warn',title:'Features near or below kerf',detail:`${tiny.length} object${tiny.length===1?' is':'s are'} thinner than about 1.75× the preview kerf.`});
+    const dense=visible.filter(o=>o.type==='vector'&&(o.loops||[]).reduce((n,l)=>n+(l.points?.length||0),0)>30000);if(dense.length)checks.push({level:'warn',title:'Very dense image trace',detail:'This vector may process slowly in laser software. Increase smoothing, speckle removal, or reduce detail and trace again if needed.'});
+    if(state.simResult){const n=state.simResult.regions.length;if(n)checks.push({level:'warn',title:`${n} loose material piece${n===1?'':'s'} detected`,detail:`About ${round(state.simResult.removedArea,1)} mm² is disconnected and shown removed in the outcome preview.`});else if(cuts.length)checks.push({level:'pass',title:'No unsupported pieces detected',detail:'Cuts either remain open or use bridges/tabs that retain material.'});}
+    if(!cuts.length&&visible.length)checks.push({level:'pass',title:'Engrave-only design',detail:'No geometry is assigned to the red Cut layer.'});
+    checks.push({level:'pass',title:'LaserPecker-safe SVG structure',detail:'Millimeter dimensions, simple inline vectors, outlined text, and color-separated operation groups.'});return checks;
+  }
+  function renderPreflight(){
+    const checks=runPreflight(),root=$('#preflightView');root.innerHTML=`<div class="section"><div class="section-title">Export readiness <span>${checks.filter(c=>c.level==='warn').length} warnings</span></div><div class="section-body"><div class="preflight-list">${checks.map(c=>`<div class="check-item ${c.level}"><div class="check-icon">${c.level==='pass'?'✓':c.level==='warn'?'!':'×'}</div><div><b>${esc(c.title)}</b><p>${esc(c.detail)}</p></div></div>`).join('')}</div></div></div><div class="section"><div class="section-title">Recommended order</div><div class="section-body section-note">1. Black fill engrave<br>2. Blue line score<br>3. Red cut<br><br>Confirm power, speed, passes, focus, and material safety inside LaserPecker Design Space before starting the machine.</div></div>`;
+  }
+  function setSideTab(name){state.side=name;$$('.side-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.side===name));$$('.side-view').forEach(v=>v.hidden=v.id!==name+'View')}
+
+  function objectAction(action){
+    if(action==='delete')return deleteSelection();if(action==='duplicate')return duplicateSelection();
+    if(action==='front'||action==='back')mutate('Arrange object',()=>{const ids=new Set(state.selection),picked=state.objects.filter(o=>ids.has(o.id)),rest=state.objects.filter(o=>!ids.has(o.id));state.objects=action==='front'?[...rest,...picked]:[...picked,...rest]});
+    if(action.startsWith('group-align'))alignSelection(action.endsWith('left')?'left':'center');
+  }
+  function deleteSelection(){if(!state.selection.length)return;mutate('Delete objects',()=>{const ids=new Set(state.selection);state.objects=state.objects.filter(o=>!ids.has(o.id));state.selection=[]})}
+  function duplicateSelection(){if(!state.selection.length)return;mutate('Duplicate objects',()=>{const made=state.selection.map(id=>{const o=deep(state.objects.find(x=>x.id===id));o.id=uid();o.name+=' copy';o.x+=3;o.y+=3;return o});state.objects.push(...made);state.selection=made.map(o=>o.id)})}
+  function alignSelection(kind){
+    const list=state.selection.map(id=>state.objects.find(o=>o.id===id)).filter(Boolean);if(list.length<2)return;mutate('Align objects',()=>{const b=boundsOf(list);list.forEach(o=>{if(kind==='left')o.x=b.x;else if(kind==='center')o.x=b.x+b.w/2-o.w/2;else if(kind==='top')o.y=b.y})})
+  }
+
+  function materialColors(){
+    const m=state.doc.material;return m==='Walnut'?['#6f4a30','#563621','#8a6040']:m==='Acrylic'?['#d7e5ea','#c3d5db','#eef8fa']:m==='Cardboard'?['#b99564','#a77f4e','#c9aa79']:m==='Leather'?['#9b603f','#7f472f','#b77954']:['#e1c28d','#cfaa70','#efd3a2'];
+  }
+  function svgImage(markup,w,h){return new Promise((resolve,reject)=>{const blob=new Blob([markup],{type:'image/svg+xml'}),url=URL.createObjectURL(blob),img=new Image();img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};img.onerror=e=>{URL.revokeObjectURL(url);reject(e)};img.src=url})}
+  function sceneSvg(filter,mode,w,h){
+    const objs=state.objects.filter(o=>o.visible!==false&&filter(o));return `<svg xmlns="${NS}" width="${w}" height="${h}" viewBox="0 0 ${state.doc.w} ${state.doc.h}">${objs.map(o=>objectMarkup(o,mode,false)).join('')}</svg>`;
+  }
+  function scheduleSimulation(){clearTimeout(simTimer);simTimer=setTimeout(runSimulation,220)}
+  async function runSimulation(){
+    const token=++state.simToken,max=760,ratio=state.doc.w/state.doc.h;let w=ratio>=1?max:Math.max(180,Math.round(max*ratio)),h=ratio>=1?Math.max(180,Math.round(max/ratio)):max;
+    state._maskStroke=Math.max(state.doc.kerf,Math.max(state.doc.w/w,state.doc.h/h)*1.65);
+    if(state.view==='preview')$('#simBusy').hidden=false;
+    try{
+      const maskCanvas=document.createElement('canvas');maskCanvas.width=w;maskCanvas.height=h;const mctx=maskCanvas.getContext('2d',{willReadFrequently:true});
+      const cuts=state.objects.some(o=>o.visible!==false&&o.operation==='cut');if(cuts){const img=await svgImage(sceneSvg(o=>o.operation==='cut','mask',w,h),w,h);mctx.drawImage(img,0,0,w,h)}
+      if(token!==state.simToken)return;const data=mctx.getImageData(0,0,w,h).data,n=w*h,barrier=new Uint8Array(n),supported=new Uint8Array(n),queue=new Int32Array(n);for(let i=0;i<n;i++)barrier[i]=data[i*4+3]>36?1:0;
+      let head=0,tail=0;const add=i=>{if(i>=0&&i<n&&!barrier[i]&&!supported[i]){supported[i]=1;queue[tail++]=i}};for(let x=0;x<w;x++){add(x);add((h-1)*w+x)}for(let y=0;y<h;y++){add(y*w);add(y*w+w-1)}
+      while(head<tail){const i=queue[head++],x=i%w;if(x>0)add(i-1);if(x<w-1)add(i+1);if(i>=w)add(i-w);if(i<n-w)add(i+w)}
+      const seen=new Uint8Array(n),regions=[];let loosePixels=0;
+      for(let i=0;i<n;i++)if(!barrier[i]&&!supported[i]&&!seen[i]){
+        head=0;tail=0;queue[tail++]=i;seen[i]=1;let count=0,minX=w,maxX=0,minY=h,maxY=0,sumX=0,sumY=0;
+        while(head<tail){const q=queue[head++],x=q%w,y=(q/w)|0;count++;sumX+=x;sumY+=y;minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);const tryAdd=j=>{if(j>=0&&j<n&&!barrier[j]&&!supported[j]&&!seen[j]){seen[j]=1;queue[tail++]=j}};if(x>0)tryAdd(q-1);if(x<w-1)tryAdd(q+1);if(y>0)tryAdd(q-w);if(y<h-1)tryAdd(q+w)}
+        if(count>=2){regions.push({count,minX,maxX,minY,maxY,cx:sumX/count,cy:sumY/count});loosePixels+=count}
+      }
+      const result={w,h,barrier,supported,regions,removedArea:loosePixels/n*state.doc.w*state.doc.h,overlay:null};
+      if(state.objects.some(o=>o.visible!==false&&o.operation!=='cut'))result.overlay=await svgImage(sceneSvg(o=>o.operation!=='cut','export',w,h),w,h);
+      if(token!==state.simToken)return;state.simResult=result;paintSimulation();renderPreflight();
+    }catch(e){console.error(e);if(state.view==='preview')toast('<b>Preview could not render.</b> The design itself is still editable.','bad')}
+    finally{delete state._maskStroke;if(token===state.simToken)$('#simBusy').hidden=true}
+  }
+  function paintSimulation(){
+    const r=state.simResult;if(!r)return;const c=$('#simCanvas');c.width=r.w;c.height=r.h;const ctx=c.getContext('2d'),img=ctx.createImageData(r.w,r.h),colors=materialColors().map(hex=>hex.match(/\w\w/g).map(x=>parseInt(x,16)));
+    for(let i=0;i<r.w*r.h;i++){
+      const x=i%r.w,y=(i/r.w)|0,grain=(Math.sin(x*.095+y*.021)+Math.sin(y*.17+x*.007))*4,off=i*4,loose=!r.supported[i]&&!r.barrier[i];
+      if(state.simMode==='result'&&!r.supported[i]){img.data[off+3]=0;continue}
+      let col=colors[0];if(state.simMode==='xray'&&loose)col=[216,91,88];else if(state.simMode==='xray'&&r.barrier[i])col=[62,18,22];else col=((y+Math.sin(x*.03)*5)%38<2)?colors[1]:colors[0];
+      img.data[off]=clamp(col[0]+grain,0,255);img.data[off+1]=clamp(col[1]+grain,0,255);img.data[off+2]=clamp(col[2]+grain,0,255);img.data[off+3]=state.simMode==='xray'?(loose?220:255):255;
+    }
+    ctx.putImageData(img,0,0);if(r.overlay){ctx.save();ctx.globalCompositeOperation='source-atop';ctx.globalAlpha=state.simMode==='xray'?.7:1;ctx.drawImage(r.overlay,0,0,r.w,r.h);ctx.restore()}
+    if(state.simMode==='xray'){ctx.save();ctx.font='700 11px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';r.regions.forEach((g,i)=>{if(g.count<15)return;ctx.fillStyle='#fff';ctx.strokeStyle='#7b2929';ctx.lineWidth=3;ctx.strokeText(String(i+1),g.cx,g.cy);ctx.fillText(String(i+1),g.cx,g.cy)});ctx.restore()}
+    const availW=Math.max(200,stage.clientWidth-90),availH=Math.max(200,stage.clientHeight-90),scale=Math.min(availW/r.w,availH/r.h,1.2)*state.previewScale;$('#previewBoard').style.width=`${r.w*scale}px`;$('#previewBoard').style.height=`${r.h*scale}px`;c.style.width='100%';c.style.height='100%';
+    $('#looseCount').textContent=r.regions.length;$('#removedArea').textContent=round(r.removedArea,1);
+  }
+
+  function exportSVGString(){
+    const groups=['engrave','score','cut'].map(op=>{const list=state.objects.filter(o=>o.visible!==false&&o.operation===op);return `<g id="${op.toUpperCase()}" data-operation="${op}" ${op==='cut'?`fill="none" stroke="${COLORS.cut}"`:`fill="${COLORS[op]}"`}>${list.map(o=>objectMarkup(o,'export',false)).join('')}</g>`}).join('\n  ');
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="${NS}" version="1.1" width="${round(state.doc.w)}mm" height="${round(state.doc.h)}mm" viewBox="0 0 ${round(state.doc.w)} ${round(state.doc.h)}">\n  <title>${esc(state.name)}</title>\n  <desc>CutCraft laser vector: black=engrave, blue=score, red=cut. Text converted to paths. Verify machine settings before processing.</desc>\n  ${groups}\n</svg>\n`;
+  }
+  function projectJSON(){return JSON.stringify({app:'CutCraft Laser Designer',version:2,name:state.name,doc:state.doc,objects:state.objects},null,2)}
+  function safeFilename(name,ext){name=(name||'cutcraft-design').trim().replace(/[\\/:*?"<>|]+/g,'-');if(!name.toLowerCase().endsWith(ext))name+=ext;return name}
+  function downloadText(content,name,type){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
+  function openExport(){
+    const counts=op=>state.objects.filter(o=>o.visible!==false&&o.operation===op).length,checks=runPreflight();$('#exportCut').textContent=counts('cut');$('#exportScore').textContent=counts('score');$('#exportEngrave').textContent=counts('engrave');$('#exportWarnings').textContent=checks.filter(c=>c.level==='warn'||c.level==='error').length;$('#exportFilename').value=safeFilename(state.name,'.svg');showModal('exportModal')
+  }
+
+  function parseLength(value){const m=String(value||'').trim().match(/^([\d.]+)\s*(mm|cm|in|px)?$/i);if(!m)return NaN;const n=Number(m[1]),u=(m[2]||'px').toLowerCase();return u==='mm'?n:u==='cm'?n*10:u==='in'?n*25.4:n*25.4/96}
+  function sanitizeSVG(text){
+    const doc=new DOMParser().parseFromString(text,'image/svg+xml');if(doc.querySelector('parsererror')||doc.documentElement.localName!=='svg')throw new Error('This is not a valid SVG file.');const svg=doc.documentElement,v=svg.getAttribute('viewBox')?.trim().split(/[ ,]+/).map(Number);let vb;
+    if(v?.length===4&&v.every(Number.isFinite))vb={x:v[0],y:v[1],w:Math.abs(v[2]),h:Math.abs(v[3])};else{const w=parseLength(svg.getAttribute('width'))||100,h=parseLength(svg.getAttribute('height'))||100;vb={x:0,y:0,w,h}}
+    const physical={w:parseLength(svg.getAttribute('width')),h:parseLength(svg.getAttribute('height'))};
+    const texts=[...svg.querySelectorAll('text')].map(t=>{const style=t.getAttribute('style')||'',sm=style.match(/font-size\s*:\s*([\d.]+)/i);return{text:(t.textContent||'TEXT').trim()||'TEXT',x:parseFloat(t.getAttribute('x'))||0,y:parseFloat(t.getAttribute('y'))||0,size:parseFloat(t.getAttribute('font-size'))||Number(sm?.[1])||Math.max(6,vb.h*.08)}});
+    const allowed=new Set(['svg','g','path','rect','circle','ellipse','line','polyline','polygon']),attrs=new Set(['d','x','y','width','height','cx','cy','r','rx','ry','x1','y1','x2','y2','points','transform','fill-rule','clip-rule']);let removed=0;
+    const clean=doc.createElementNS(NS,'g');
+    function cloneNode(node){if(node.nodeType!==1)return null;const tag=node.localName.toLowerCase();if(tag==='text')return null;if(!allowed.has(tag)){removed++;return null}const c=doc.createElementNS(NS,tag==='svg'?'g':tag);[...node.attributes].forEach(a=>{const n=a.name.toLowerCase();if(attrs.has(n)&&!/^on/i.test(n)&&!String(a.value).includes('url('))c.setAttribute(n,a.value)});[...node.children].forEach(ch=>{const cc=cloneNode(ch);if(cc)c.appendChild(cc)});return c}
+    [...svg.children].forEach(ch=>{const c=cloneNode(ch);if(c)clean.appendChild(c)});return{markup:[...clean.children].map(n=>new XMLSerializer().serializeToString(n)).join(''),vb,physical,removed,texts};
+  }
+  async function traceImportedGeometry(markup,vb){
+    if(!markup||!vb.w||!vb.h)return[];const host=document.createElementNS(NS,'svg');host.setAttribute('xmlns',NS);host.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);host.setAttribute('width',vb.w);host.setAttribute('height',vb.h);host.setAttribute('preserveAspectRatio','none');host.style.cssText='position:absolute;left:-10000px;top:-10000px;opacity:0;pointer-events:none;overflow:visible';host.innerHTML=markup;document.body.appendChild(host);await new Promise(resolve=>requestAnimationFrame(resolve));
+    const loops=[],closedTags=new Set(['rect','circle','ellipse','polygon']),diag=Math.hypot(vb.w,vb.h);
+    try{
+      for(const el of host.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon')){
+        if(typeof el.getTotalLength!=='function'||typeof el.getPointAtLength!=='function')continue;let total,matrix;try{total=el.getTotalLength();matrix=el.getCTM()}catch{continue}if(!Number.isFinite(total)||total<=0||!matrix)continue;
+        const scale=Math.max(Math.hypot(matrix.a,matrix.b),Math.hypot(matrix.c,matrix.d),.0001),steps=clamp(Math.ceil(total/Math.max(.04,Math.min(vb.w,vb.h)/700)),8,1800),sample=total/steps*scale,jump=Math.max(sample*4,diag*.0005);let run=[];
+        const flush=()=>{if(run.length<2){run=[];return}const closed=closedTags.has(el.localName)||distance(run[0],run[run.length-1])<=Math.max(sample*4,diag*.001);if(closed&&distance(run[0],run[run.length-1])<=Math.max(sample*4,diag*.001))run.pop();if(run.length>1)loops.push({closed,points:run.map(p=>({x:round(p.x/vb.w,6),y:round(p.y/vb.h,6)}))});run=[]};
+        for(let i=0;i<=steps;i++){let q;try{q=el.getPointAtLength(total*i/steps)}catch{continue}const p={x:q.x*matrix.a+q.y*matrix.c+matrix.e,y:q.x*matrix.b+q.y*matrix.d+matrix.f};if(run.length&&distance(run[run.length-1],p)>jump)flush();run.push(p)}flush();
+      }
+    }finally{host.remove()}
+    return loops;
+  }
+  function normalizeProjectObject(source){
+    const o=deep(source||{});o.id=/^o_[a-z0-9]+$/i.test(o.id||'')?o.id:uid();o.name=String(o.name||'Imported object').slice(0,120);o.operation=['cut','score','engrave','bridge'].includes(o.operation)?o.operation:'engrave';o.visible=o.visible!==false;o.locked=!!o.locked;o.x=Number(o.x)||0;o.y=Number(o.y)||0;o.w=clamp(Math.abs(Number(o.w)||1),.1,5000);o.h=clamp(Math.abs(Number(o.h)||1),.1,5000);o.rotation=Number(o.rotation)||0;o.engraveMode=['fill','line','both'].includes(o.engraveMode)?o.engraveMode:'fill';if(o.type==='bridge'){o.operation='bridge';o.w=clamp(o.w,.2,1000);o.h=clamp(o.h,.3,10)}
+    if(o.type==='text'){o.text=String(o.text||'TEXT').slice(0,240);o.font=VECTOR_FONTS[o.font]?o.font:'sans';o.autoStencil=!!o.autoStencil||o.font==='stencil';o.stencilBridge=clamp(Number(o.stencilBridge)||1.5,.3,10);o.bridgeDirection=['smart','horizontal','vertical'].includes(o.bridgeDirection)?o.bridgeDirection:'smart';if(Array.isArray(o.vectorLoops))o.vectorLoops=o.vectorLoops.slice(0,2000).map(loop=>(loop||[]).slice(0,12000).map(p=>({x:clamp(Number(p.x)||0,-2,3),y:clamp(Number(p.y)||0,-2,3)}))).filter(loop=>loop.length>2);else{delete o.vectorLoops;delete o.vectorKey}}
+    if(o.type==='vector'){o.loops=(o.loops||[]).slice(0,5000).map(loop=>({closed:loop?.closed!==false,points:(loop?.points||loop||[]).slice(0,12000).map(p=>({x:clamp(Number(p.x)||0,-2,3),y:clamp(Number(p.y)||0,-2,3)}))})).filter(loop=>loop.points.length>2);o.lockAspect=o.lockAspect!==false}
+    if(o.type==='import'&&o.markup){const vb=o.sourceViewBox||{x:0,y:0,w:o.w,h:o.h},wrapped=`<svg xmlns="${NS}" viewBox="${vb.x||0} ${vb.y||0} ${vb.w||o.w} ${vb.h||o.h}">${o.markup}</svg>`;o.markup=sanitizeSVG(wrapped).markup;if(Array.isArray(o.cutLoops))o.cutLoops=o.cutLoops.slice(0,1000).map(loop=>({closed:loop?.closed!==false,points:(loop?.points||[]).slice(0,5000).map(p=>({x:clamp(Number(p.x)||0,-10,10),y:clamp(Number(p.y)||0,-10,10)}))})).filter(loop=>loop.points.length>1)}
+    return o;
+  }
+  async function openFile(file){
+    const text=await file.text();if(file.name.toLowerCase().endsWith('.json')||file.name.toLowerCase().endsWith('.cutcraft')){
+      const d=JSON.parse(text);if(!d.doc||!Array.isArray(d.objects))throw new Error('Not a CutCraft project file.');const before=snapshot();state.name=String(d.name||file.name.replace(/\.[^.]+$/,'')).slice(0,120);state.doc={...state.doc,...d.doc};state.doc.w=clamp(Number(state.doc.w)||120,10,1000);state.doc.h=clamp(Number(state.doc.h)||120,10,1000);state.doc.kerf=clamp(Number(state.doc.kerf)||.15,.02,2);state.objects=d.objects.map(normalizeProjectObject);state.selection=[];$('#projectName').value=state.name;pushUndo(before,'Open project');fitView();renderAll();toast('<b>Project opened.</b> All editable object data was restored.');return;
+    }
+    const cleaned=sanitizeSVG(text),traced=await traceImportedGeometry(cleaned.markup,cleaned.vb),before=snapshot(),empty=!state.objects.length,ratio=cleaned.vb.w/cleaned.vb.h;if(empty){const pw=Number.isFinite(cleaned.physical.w)?cleaned.physical.w:cleaned.vb.w,ph=Number.isFinite(cleaned.physical.h)?cleaned.physical.h:cleaned.vb.h;state.doc.w=round(clamp(pw,10,1000),2);state.doc.h=round(clamp(ph,10,1000),2)}const maxW=state.doc.w*(empty?1:.82),maxH=state.doc.h*(empty?1:.82),scale=Math.min(maxW/cleaned.vb.w,maxH/cleaned.vb.h),w=cleaned.vb.w*scale,h=cleaned.vb.h*scale,x=(state.doc.w-w)/2,y=(state.doc.h-h)/2;
+    const added=[];if(cleaned.markup){const o=baseObject('import',file.name.replace(/\.svg$/i,''),x,y,w,h,'engrave');o.markup=cleaned.markup;o.sourceViewBox=cleaned.vb;o.cutLoops=traced;o.engraveMode='both';state.objects.push(o);added.push(o)}
+    cleaned.texts.forEach(t=>{const th=Math.max(2,t.size*scale),tx=x+(t.x-cleaned.vb.x)*scale,ty=y+(t.y-cleaned.vb.y)*scale-th,to=textObject(t.text,tx,ty,th,'sans','engrave');to.name='Imported text: '+t.text.slice(0,18);state.objects.push(to);added.push(to)});state.selection=added.map(o=>o.id);
+    state.name=empty?file.name.replace(/\.svg$/i,''):state.name;$('#projectName').value=state.name;pushUndo(before,'Import SVG');fitView();renderAll();toast(`<b>SVG imported as editable artwork.</b>${traced.length?` ${traced.length} vector contour${traced.length===1?' was':'s were'} prepared for manual bridges.`:''}${cleaned.texts.length?` ${cleaned.texts.length} live text object${cleaned.texts.length===1?' was':'s were'} converted to outlined Forge text.`:''}${cleaned.removed?` ${cleaned.removed} unsupported element${cleaned.removed===1?' was':'s were'} excluded.`:''}`,'good',5600);
+  }
+
+  function addObjects(list,label='Generate design',replace=false){mutate(label,()=>{if(replace)state.objects=[];state.objects.push(...list);state.selection=list.map(o=>o.id)});fitView()}
+  function centerBox(w,h){return{x:(state.doc.w-w)/2,y:(state.doc.h-h)/2}}
+  function generateTemplate(type,text,size){
+    text=String(text||'MAKER').toUpperCase().slice(0,28);size=clamp(Number(size)||90,20,400);const list=[],maxW=Math.min(size,state.doc.w*.9),maxH=state.doc.h*.9;
+    const R=(x,y,w,h,op='cut',name='Panel',rx=0)=>{const o=shapeObject('rect',x,y,w,h,op,name);o.rx=rx;list.push(o);return o},E=(x,y,w,h,op='cut',name='Circle')=>{const o=shapeObject('ellipse',x,y,w,h,op,name);list.push(o);return o},L=(x1,y1,x2,y2,op='score',name='Line')=>{const o=shapeObject('line',x1,y1,x2-x1,y2-y1,op,name);o.engraveMode='line';list.push(o);return o},P=(pts,op='cut',name='Custom outline')=>{const o=pathObject(pts,true,op);o.name=name;list.push(o);return o},T=(value,x,y,h,w,op='engrave',auto=false,font='sans')=>{const o=textObject(value,x,y,h,font,op,auto);if(w)o.w=w;o.stencilBridge=Math.max(.7,h*.1);list.push(o);return o};
+    const fit=(ratio=1)=>{let w=maxW,h=w/ratio;if(h>maxH){h=maxH;w=h*ratio}return{w,h,...centerBox(w,h)}};
+    if(type==='coaster'){
+      const q=fit(1),s=q.w;E(q.x,q.y,s,s,'cut','Coaster edge');for(let r=.78;r>=.34;r-=.15){const o=shapeObject('polygon',q.x+s*(1-r)/2,q.y+s*(1-r)/2,s*r,s*r,'engrave',`Rosette ring ${round(r,1)}`);o.sides=Math.round(8+(1-r)*8);o.engraveMode='line';o.rotation=r*25;list.push(o)}for(let i=0;i<12;i++){const a=i*Math.PI/6,cx=q.x+s/2,cy=q.y+s/2;L(cx+Math.cos(a)*s*.12,cy+Math.sin(a)*s*.12,cx+Math.cos(a)*s*.39,cy+Math.sin(a)*s*.39,'engrave','Radial detail')}
+    }else if(type==='nameplate'||type==='address'||type==='boxlabel'){
+      const ratio=type==='address'?2.7:type==='boxlabel'?3.2:2.38,q=fit(ratio),hole=q.h*.13;R(q.x,q.y,q.w,q.h,'cut',type==='address'?'Address plaque':type==='boxlabel'?'Storage label':'Nameplate edge',Math.min(5,q.h*.16));E(q.x+q.w*.055-hole/2,q.y+q.h/2-hole/2,hole,hole,'cut','Left mounting hole');E(q.x+q.w*.945-hole/2,q.y+q.h/2-hole/2,hole,hole,'cut','Right mounting hole');const title=type==='address'?(text.match(/\d/) ? text : '1234'):text;T(title,q.x+q.w*.15,q.y+q.h*.27,q.h*.43,q.w*.7,'engrave');if(type==='address')T('YOUR STREET',q.x+q.w*.29,q.y+q.h*.7,q.h*.11,q.w*.42,'score',false,'mono');
+    }else if(type==='badge'||type==='monogram'){
+      const q=fit(1),s=q.w;E(q.x,q.y,s,s,'cut',type==='badge'?'Badge edge':'Monogram frame');E(q.x+s*.08,q.y+s*.08,s*.84,s*.84,'score','Inner ring');if(type==='monogram'){const star=shapeObject('star',q.x+s*.17,q.y+s*.17,s*.66,s*.66,'score','Decorative star');list.push(star)}T(text.slice(0,type==='badge'?3:1),q.x+s*.22,q.y+s*.33,s*.27,s*.56,type==='monogram'?'cut':'engrave',type==='monogram',type==='monogram'?'serif':'sans');
+    }else if(type==='keytag'||type==='luggage'){
+      const q=fit(type==='luggage'?1.65:2.9),r=Math.min(5,q.h*.15);R(q.x,q.y,q.w,q.h,'cut',type==='luggage'?'Luggage tag':'Key tag edge',r);if(type==='luggage')R(q.x+q.w*.08,q.y+q.h*.42,q.w*.08,q.h*.16,'cut','Strap slot',q.h*.06);else E(q.x+q.h*.15,q.y+q.h*.34,q.h*.32,q.h*.32,'cut','Hardware hole');T(text,q.x+(type==='luggage'?q.w*.23:q.h*.65),q.y+q.h*.24,q.h*(type==='luggage'?.25:.43),q.w*(type==='luggage'?.65:.68),'engrave');if(type==='luggage'){L(q.x+q.w*.23,q.y+q.h*.62,q.x+q.w*.87,q.y+q.h*.62,'score','Contact line');L(q.x+q.w*.23,q.y+q.h*.76,q.x+q.w*.75,q.y+q.h*.76,'score','Contact line')}
+    }else if(type==='mandala'){
+      const q=fit(1),s=q.w;E(q.x,q.y,s,s,'cut','Mandala edge');for(let ring=0;ring<3;ring++){const rad=s*(.16+ring*.1);for(let i=0;i<12;i++){const a=i*Math.PI/6,cx=q.x+s/2+Math.cos(a)*rad,cy=q.y+s/2+Math.sin(a)*rad,o=shapeObject('ellipse',cx-s*.1,cy-s*.035,s*.2,s*.07,'engrave','Mandala petal');o.engraveMode='line';o.rotation=i*30;list.push(o)}}
+    }else if(type==='stencil'){
+      const q=fit(2.38);R(q.x,q.y,q.w,q.h,'cut','Stencil panel',2);T(text,q.x+q.w*.1,q.y+q.h*.26,q.h*.48,q.w*.8,'cut',true,'sans');
+    }else if(type==='ornament'){
+      const q=fit(1),s=q.w;E(q.x,q.y,s,s,'cut','Ornament edge');E(q.x+s*.45,q.y+s*.055,s*.1,s*.1,'cut','Hanging hole');for(let i=0;i<6;i++){const a=i*Math.PI/3,cx=q.x+s/2,cy=q.y+s/2,x2=cx+Math.cos(a)*s*.34,y2=cy+Math.sin(a)*s*.34;L(cx,cy,x2,y2,'score','Snowflake arm');for(const d of [.2,.28]){const bx=cx+Math.cos(a)*s*d,by=cy+Math.sin(a)*s*d;L(bx,by,bx+Math.cos(a+.65)*s*.08,by+Math.sin(a+.65)*s*.08,'score','Snowflake branch');L(bx,by,bx+Math.cos(a-.65)*s*.08,by+Math.sin(a-.65)*s*.08,'score','Snowflake branch')}}
+    }else if(type==='bookmark'){
+      const q=fit(.34),r=q.w*.08;R(q.x,q.y,q.w,q.h,'cut','Bookmark edge',r);E(q.x+q.w*.36,q.y+q.w*.25,q.w*.28,q.w*.28,'cut','Tassel hole');const t=T(text.slice(0,12),q.x+q.w*.25,q.y+q.h*.25,q.w*.25,q.h*.55,'engrave');t.rotation=90;L(q.x+q.w*.2,q.y+q.h*.2,q.x+q.w*.8,q.y+q.h*.2,'score','Top detail');
+    }else if(type==='plantmarker'){
+      const q=fit(.42),x=q.x,y=q.y,w=q.w,h=q.h;P([{x,y},{x:x+w,y},{x:x+w,y:y+h*.68},{x:x+w*.52,y:y+h},{x:x+w*.48,y:y+h},{x,y:y+h*.68}],'cut','Plant marker outline');T(text.slice(0,12),x+w*.13,y+h*.14,h*.08,w*.74,'engrave');L(x+w*.15,y+h*.28,x+w*.85,y+h*.28,'score','Label line');
+    }else if(type==='gifttag'){
+      const q=fit(1.55),x=q.x,y=q.y,w=q.w,h=q.h;P([{x:x+w*.12,y},{x:x+w,y},{x:x+w,y:y+h},{x:x+w*.12,y:y+h},{x,y:y+h*.68},{x,y:y+h*.32}],'cut','Gift tag outline');E(x+w*.055,y+h*.44,h*.12,h*.12,'cut','String hole');T(text,x+w*.2,y+h*.28,h*.35,w*.7,'engrave');
+    }else if(type==='doorhanger'){
+      const q=fit(.48),r=q.w*.13;R(q.x,q.y,q.w,q.h,'cut','Door hanger edge',r);E(q.x+q.w*.18,q.y+q.w*.16,q.w*.64,q.w*.64,'cut','Door knob opening');L(q.x+q.w*.5,q.y+q.w*.16,q.x+q.w,q.y+q.w*.16,'cut','Knob entry slit');T(text.slice(0,14),q.x+q.w*.12,q.y+q.h*.55,q.h*.08,q.w*.76,'engrave');
+    }else if(type==='earrings'){
+      const q=fit(1.55),s=Math.min(q.h*.8,q.w*.38),gap=q.w*.12,y=q.y+(q.h-s)/2;for(let j=0;j<2;j++){const x=q.x+j*(s+gap)+(q.w-(s*2+gap))/2,o=shapeObject('polygon',x,y,s,s,'cut',`Earring ${j+1}`);o.sides=6;list.push(o);E(x+s*.43,y+s*.08,s*.14,s*.14,'cut','Earring hole');const inner=shapeObject('polygon',x+s*.2,y+s*.23,s*.6,s*.6,'score','Faceted detail');inner.sides=6;inner.rotation=30;list.push(inner)}
+    }else if(type==='pettag'||type==='heartplaque'){
+      const q=fit(type==='pettag'?1.25:1),o=shapeObject('heart',q.x,q.y,q.w,q.h,'cut',type==='pettag'?'Pet tag':'Heart plaque');list.push(o);if(type==='pettag')E(q.x+q.w*.44,q.y+q.h*.12,q.w*.12,q.w*.12,'cut','Collar hole');T(text.slice(0,type==='pettag'?10:16),q.x+q.w*.2,q.y+q.h*(type==='pettag'?.47:.42),q.h*.16,q.w*.6,'engrave');
+    }else if(type==='switchplate'){
+      const q=fit(.64);R(q.x,q.y,q.w,q.h,'cut','Switch plate edge',Math.min(5,q.w*.1));R(q.x+q.w*.38,q.y+q.h*.36,q.w*.24,q.h*.28,'cut','Switch opening',q.w*.03);E(q.x+q.w*.45,q.y+q.h*.12,q.w*.1,q.w*.1,'cut','Top screw');E(q.x+q.w*.45,q.y+q.h*.78,q.w*.1,q.w*.1,'cut','Bottom screw');
+    }else if(type==='frame'){
+      const q=fit(1.25),border=Math.min(q.w,q.h)*.14;R(q.x,q.y,q.w,q.h,'cut','Frame outer edge',3);R(q.x+border,q.y+border,q.w-border*2,q.h-border*2,'cut','Photo window',1);R(q.x+border*.55,q.y+border*.55,q.w-border*1.1,q.h-border*1.1,'score','Inset border',1);
+    }else if(type==='clock'){
+      const q=fit(1),s=q.w,cx=q.x+s/2,cy=q.y+s/2;E(q.x,q.y,s,s,'cut','Clock edge');E(cx-s*.035,cy-s*.035,s*.07,s*.07,'cut','Clock shaft');for(let i=0;i<12;i++){const a=-Math.PI/2+i*Math.PI/6,r1=i%3?s*.38:s*.34,r2=s*.44;L(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1,cx+Math.cos(a)*r2,cy+Math.sin(a)*r2,'score','Hour mark')}T(text.slice(0,10),q.x+s*.3,q.y+s*.7,s*.08,s*.4,'engrave');
+    }else if(type==='trivet'){
+      const q=fit(1),s=q.w;E(q.x,q.y,s,s,'cut','Trivet edge');for(let row=-2;row<=2;row++)for(let col=-2;col<=2;col++){const cx=q.x+s/2+col*s*.145+(row%2)*s*.072,cy=q.y+s/2+row*s*.13;if(Math.hypot(cx-(q.x+s/2),cy-(q.y+s/2))<s*.33){const h=s*.085,o=shapeObject('polygon',cx-h,cy-h,h*2,h*2,'cut','Vent');o.sides=6;list.push(o)}}
+    }else if(type==='lantern'){
+      const q=fit(.62);R(q.x,q.y,q.w,q.h,'cut','Lantern panel',2);for(let row=0;row<4;row++)for(let col=0;col<2;col++){const w=q.w*.24,h=q.h*.13,x=q.x+q.w*(.19+col*.38),y=q.y+q.h*(.12+row*.2),o=shapeObject('polygon',x,y,w,h,'cut','Light opening');o.sides=4;o.rotation=45;list.push(o)}L(q.x+q.w*.1,q.y+q.h*.92,q.x+q.w*.9,q.y+q.h*.92,'score','Fold guide');
+    }else if(type==='cable'){
+      const q=fit(2.3);R(q.x,q.y,q.w,q.h,'cut','Cable organizer',3);for(let i=0;i<4;i++){const x=q.x+q.w*(.17+i*.21);R(x,q.y+q.h*.18,q.w*.055,q.h*.48,'cut',`Cable slot ${i+1}`,q.w*.025);L(x,q.y+q.h*.7,x+q.w*.055,q.y+q.h*.7,'score','Cable label')}
+    }else if(type==='phonestand'){
+      const q=fit(1.4),gap=q.w*.08,pw=(q.w-gap)/2;R(q.x,q.y,pw,q.h,'cut','Stand back',2);R(q.x+pw+gap,q.y,pw,q.h,'cut','Stand foot',2);R(q.x+pw*.42,q.y+q.h*.55,pw*.16,q.h*.32,'cut','Back slot',1);R(q.x+pw+gap+pw*.42,q.y+q.h*.22,pw*.16,q.h*.32,'cut','Foot slot',1);L(q.x+pw*.12,q.y+q.h*.2,q.x+pw*.88,q.y+q.h*.2,'score','Phone rest guide');
+    }else if(type==='desksign'){
+      const q=fit(1.65),faceH=q.h*.63,baseY=q.y+q.h*.76;R(q.x,q.y,q.w,faceH,'cut','Desk sign face',3);T(text,q.x+q.w*.12,q.y+faceH*.31,faceH*.3,q.w*.76,'engrave');R(q.x+q.w*.1,baseY,q.w*.8,q.h*.24,'cut','Desk sign base',2);R(q.x+q.w*.3,baseY+q.h*.08,q.w*.4,q.h*.08,'cut','Sign slot',1);
+    }else if(type==='snowflake'){
+      const q=fit(1),s=q.w,cx=q.x+s/2,cy=q.y+s/2,pts=[];for(let i=0;i<48;i++){const a=-Math.PI/2+i*Math.PI*2/48,r=i%8===0?s*.47:i%4===0?s*.34:i%2===0?s*.27:s*.16;pts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r})}P(pts,'cut','Snowflake outline');E(cx-s*.035,q.y+s*.045,s*.07,s*.07,'cut','Hanging hole');for(let i=0;i<6;i++){const a=i*Math.PI/3;L(cx,cy,cx+Math.cos(a)*s*.34,cy+Math.sin(a)*s*.34,'score','Snowflake vein')}
+    }else if(type==='napkinring'){
+      const q=fit(3.1);R(q.x,q.y,q.w,q.h,'cut','Napkin ring wrap',q.h*.18);R(q.x+q.w*.08,q.y+q.h*.35,q.w*.1,q.h*.3,'cut','Left tab slot',q.h*.08);R(q.x+q.w*.82,q.y+q.h*.35,q.w*.1,q.h*.3,'cut','Right tab slot',q.h*.08);L(q.x+q.w*.25,q.y+q.h*.12,q.x+q.w*.25,q.y+q.h*.88,'score','Fold guide');L(q.x+q.w*.75,q.y+q.h*.12,q.x+q.w*.75,q.y+q.h*.88,'score','Fold guide');T(text.slice(0,8),q.x+q.w*.34,q.y+q.h*.3,q.h*.35,q.w*.32,'engrave');
+    }else if(type==='keyholder'){
+      const q=fit(2.25);R(q.x,q.y,q.w,q.h,'cut','Key holder board',3);E(q.x+q.w*.08,q.y+q.h*.12,q.h*.13,q.h*.13,'cut','Mounting hole');E(q.x+q.w*.86,q.y+q.h*.12,q.h*.13,q.h*.13,'cut','Mounting hole');T(text,q.x+q.w*.2,q.y+q.h*.17,q.h*.25,q.w*.6,'engrave');for(let i=0;i<4;i++){const x=q.x+q.w*(.2+i*.2);E(x-q.h*.045,q.y+q.h*.7,q.h*.09,q.h*.09,'cut','Hook hole');L(x,q.y+q.h*.7,x,q.y+q.h*.88,'cut','Hook slot')}
+    }else if(type==='recipeboard'){
+      const q=fit(.76);R(q.x,q.y,q.w,q.h,'cut','Recipe board',4);T(text.slice(0,14),q.x+q.w*.14,q.y+q.h*.1,q.h*.09,q.w*.72,'engrave',false,'serif');for(let i=0;i<7;i++)L(q.x+q.w*.12,q.y+q.h*(.3+i*.085),q.x+q.w*.88,q.y+q.h*(.3+i*.085),'score','Writing line');E(q.x+q.w*.44,q.y+q.h*.035,q.w*.12,q.w*.12,'cut','Hanging hole');
+    }
+    return list;
+  }
+
+  function renderTemplateCatalog(){
+    const category=$('#templateCategory'),search=($('#templateSearch')?.value||'').trim().toLowerCase();if(category.options.length===1)[...new Set(TEMPLATE_CATALOG.map(t=>t.category))].sort().forEach(name=>category.add(new Option(name,name)));const chosen=category.value||'all',items=TEMPLATE_CATALOG.filter(t=>(chosen==='all'||t.category===chosen)&&(!search||`${t.name} ${t.description} ${t.category}`.toLowerCase().includes(search))),grid=$('#templateGrid');grid.innerHTML=items.length?items.map(t=>`<button class="template-card ${state.selectedTemplate===t.id?'active':''}" data-template="${t.id}"><div class="template-art">${t.icon}</div><b>${esc(t.name)}</b><small>${esc(t.description)}</small></button>`).join(''):`<div class="template-empty">No designs match that search. Try a broader word.</div>`;$$('[data-template]',grid).forEach(b=>b.addEventListener('click',()=>{state.selectedTemplate=b.dataset.template;$$('[data-template]',grid).forEach(x=>x.classList.toggle('active',x===b))}));
+  }
+  function updateTextPreview(){const font=$('#newTextFont').value,preview=$('#newTextPreview');preview.textContent=($('#newTextValue').value||'YOUR TEXT').split(/\r?\n/)[0];preview.style.fontFamily=VECTOR_FONTS[font]?.preview||VECTOR_FONTS.sans.preview;preview.style.fontWeight=font==='condensed'?'900':'700'}
+  function setTextAutoStencil(on){state.textAutoStencil=!!on;$$('[data-stencil-choice]').forEach(x=>x.classList.toggle('active',(x.dataset.stencilChoice==='auto')===state.textAutoStencil));$('#stencilOptions').hidden=!state.textAutoStencil}
+
+  function blurGray(source,w,h,radius){
+    radius=clamp(Math.round(radius||0),0,8);if(!radius)return new Float32Array(source);const tmp=new Float32Array(source.length),out=new Float32Array(source.length),span=radius*2+1;
+    for(let y=0;y<h;y++){let sum=0;for(let x=-radius;x<=radius;x++)sum+=source[y*w+clamp(x,0,w-1)];for(let x=0;x<w;x++){tmp[y*w+x]=sum/span;sum-=source[y*w+clamp(x-radius,0,w-1)];sum+=source[y*w+clamp(x+radius+1,0,w-1)]}}
+    for(let x=0;x<w;x++){let sum=0;for(let y=-radius;y<=radius;y++)sum+=tmp[clamp(y,0,h-1)*w+x];for(let y=0;y<h;y++){out[y*w+x]=sum/span;sum-=tmp[clamp(y-radius,0,h-1)*w+x];sum+=tmp[clamp(y+radius+1,0,h-1)*w+x]}}return out;
+  }
+  function sobelEdges(gray,w,h){const out=new Uint8Array(gray.length);for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x,gx=-gray[i-w-1]-2*gray[i-1]-gray[i+w-1]+gray[i-w+1]+2*gray[i+1]+gray[i+w+1],gy=-gray[i-w-1]-2*gray[i-w]-gray[i-w+1]+gray[i+w-1]+2*gray[i+w]+gray[i+w+1];out[i]=clamp(Math.hypot(gx,gy)*.32,0,255)}return out}
+  function normalizePixelLoops(loops,w,h){return loops.map(points=>({closed:true,points:points.map(p=>({x:round(p.x/w,6),y:round(p.y/h,6)}))}))}
+  function halftoneLoops(gray,w,h,detail=55,threshold=128){
+    const step=clamp(Math.round(19-detail*.13),5,18),loops=[];for(let cy=Math.floor(step/2);cy<h;cy+=step)for(let cx=Math.floor(step/2);cx<w;cx+=step){let sum=0,n=0,r=Math.max(1,Math.floor(step*.38));for(let y=Math.max(0,cy-r);y<Math.min(h,cy+r);y+=2)for(let x=Math.max(0,cx-r);x<Math.min(w,cx+r);x+=2){sum+=gray[y*w+x];n++}const darkness=1-sum/(Math.max(1,n)*255),boost=clamp((threshold-64)/128,.5,1.5),radius=step*.46*Math.sqrt(clamp(darkness*boost,0,1));if(radius<.7)continue;const count=clamp(Math.round(radius*2.5),8,18),pts=[];for(let i=0;i<count;i++){const a=i*Math.PI*2/count;pts.push({x:(cx+Math.cos(a)*radius)/w,y:(cy+Math.sin(a)*radius)/h})}loops.push({closed:true,points:pts})}return loops;
+  }
+  function processTraceDraft(imageData,settings={}){
+    const w=imageData.width,h=imageData.height,rgba=imageData.data,raw=new Float32Array(w*h),invert=!!settings.invert;for(let i=0;i<raw.length;i++){const a=rgba[i*4+3]/255,v=(rgba[i*4]*.2126+rgba[i*4+1]*.7152+rgba[i*4+2]*.0722)*a+255*(1-a);raw[i]=invert?255-v:v}const gray=blurGray(raw,w,h,settings.smooth||0),mode=settings.mode||'silhouette',threshold=clamp(Number(settings.threshold)||128,1,254),detail=clamp(Number(settings.detail)||55,10,100);if(mode==='halftone'){const loops=halftoneLoops(gray,w,h,detail,threshold).slice(0,6000);return{mode,w,h,gray,mask:null,loops,points:loops.reduce((n,l)=>n+l.points.length,0)}}
+    const edges=sobelEdges(gray,w,h),mask=new Uint8Array(w*h);if(mode==='silhouette')for(let i=0;i<mask.length;i++)mask[i]=gray[i]<threshold?1:0;else if(mode==='sketch'){const limit=clamp(125-threshold*.55,12,115);for(let i=0;i<mask.length;i++)mask[i]=edges[i]>limit?1:0}else{const bayer=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x,v=gray[i],dark=v<threshold*.78,mid=v<threshold*1.38&&bayer[(y%4)*4+x%4]<(15*(threshold*1.38-v)/Math.max(1,threshold*.6));mask[i]=(dark||mid||edges[i]>clamp(155-threshold*.55,28,135))?1:0}}
+    removeSmallMaskComponents(mask,w,h,settings.speckle||0);const tolerance=clamp(2.65-detail*.022,.35,2.5),pixelLoops=traceBinaryMask(mask,w,h,{simplify:tolerance,minArea:2}),loops=normalizePixelLoops(pixelLoops,w,h).slice(0,6000);return{mode,w,h,gray,mask,loops,points:loops.reduce((n,l)=>n+l.points.length,0)};
+  }
+  function paintTraceResult(result){
+    const canvas=$('#traceResultCanvas');if(!result)return;canvas.width=result.w;canvas.height=result.h;const ctx=canvas.getContext('2d');ctx.fillStyle='#f7f3ea';ctx.fillRect(0,0,result.w,result.h);if(result.mask){const img=ctx.createImageData(result.w,result.h);for(let i=0;i<result.mask.length;i++){const v=result.mask[i]?20:247,o=i*4;img.data[o]=v;img.data[o+1]=v;img.data[o+2]=v;img.data[o+3]=255}ctx.putImageData(img,0,0)}else{ctx.fillStyle='#171717';for(const loop of result.loops){ctx.beginPath();loop.points.forEach((p,i)=>{const x=p.x*result.w,y=p.y*result.h;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.closePath();ctx.fill()}}$('#tracePaths').textContent=result.loops.length.toLocaleString();$('#tracePoints').textContent=result.points.toLocaleString();$('#traceStatus').textContent=result.mode==='halftone'?'Vector dots ready':'Vector paths ready';$('#addTraceBtn').disabled=!result.loops.length;
+  }
+  function readTraceSettings(){return{mode:state.traceMode,threshold:Number($('#traceThreshold').value),smooth:Number($('#traceSmooth').value),speckle:Number($('#traceSpeckle').value),detail:Number($('#traceDetail').value),invert:state.traceInvert}}
+  function scheduleTrace(){if(!traceDraft.imageData)return;clearTimeout(traceTimer);$('#traceBusy').textContent='Processing…';$('#traceStatus').textContent='Tracing';traceTimer=setTimeout(()=>{try{traceDraft.settings=readTraceSettings();traceDraft.result=processTraceDraft(traceDraft.imageData,traceDraft.settings);paintTraceResult(traceDraft.result)}catch(err){console.error(err);$('#traceStatus').textContent='Could not trace';toast(`<b>Image tracing failed.</b> ${esc(err.message)}`,'bad')}finally{$('#traceBusy').textContent=''}},80)}
+  async function loadTraceImage(file){
+    if(!file||(!(file.type||'').startsWith('image/')&&!/\.(png|jpe?g|webp|gif|bmp)$/i.test(file.name||'')))throw new Error('Choose a PNG, JPG, WebP, GIF, or BMP image.');if(file.size>25*1024*1024)throw new Error('That image is larger than 25 MB.');const url=URL.createObjectURL(file);try{const img=await new Promise((resolve,reject)=>{const el=new Image();el.onload=()=>resolve(el);el.onerror=()=>reject(new Error('The browser could not decode that image.'));el.src=url}),max=760,scale=Math.min(1,max/Math.max(img.naturalWidth||img.width,img.naturalHeight||img.height)),w=Math.max(1,Math.round((img.naturalWidth||img.width)*scale)),h=Math.max(1,Math.round((img.naturalHeight||img.height)*scale)),canvas=$('#traceSourceCanvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.clearRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);traceDraft.image=img;traceDraft.fileName=(file.name||'image').replace(/\.[^.]+$/,'');traceDraft.imageData=ctx.getImageData(0,0,w,h);$('#sourceDimensions').textContent=`${img.naturalWidth||img.width} × ${img.naturalHeight||img.height}`;scheduleTrace()}finally{URL.revokeObjectURL(url)}
+  }
+  function addTraceToCanvas(){
+    const r=traceDraft.result;if(!r?.loops?.length)return;let w=clamp(Number($('#traceWidth').value)||80,5,900),h=w*r.h/r.w,scale=Math.min(1,state.doc.w*.9/w,state.doc.h*.9/h);w*=scale;h*=scale;const p=centerBox(w,h),op=$('#traceOperation').value,o=vectorObject(r.loops,p.x,p.y,w,h,op,`${r.mode[0].toUpperCase()+r.mode.slice(1)} trace: ${traceDraft.fileName||'image'}`);addObjects([o],'Trace image',false);hideModal('imageModal');selectTool('select');setWorkspaceView('design');toast(`<b>Image converted to ${r.loops.length.toLocaleString()} vector path${r.loops.length===1?'':'s'}.</b> It can now be resized, rotated, recolored by operation, and saved as pure SVG.`,'good',5200)
+  }
+
+  function setWorkspaceView(view){state.view=view;$$('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('#previewPane').hidden=view!=='preview';editorSvg.style.visibility=view==='preview'?'hidden':'visible';$('#emptyState').style.display=view==='preview'?'none':'';if(view==='preview'){runSimulation();paintSimulation()}else renderAll();updateZoomReadout()}
+
+  // Canvas and global interaction
+  editorSvg.addEventListener('pointerdown',beginGesture);editorSvg.addEventListener('pointermove',moveGesture);editorSvg.addEventListener('pointerup',endGesture);editorSvg.addEventListener('pointercancel',endGesture);
+  editorSvg.addEventListener('wheel',e=>{e.preventDefault();zoom(Math.exp(e.deltaY*.0015),clientPoint(e))},{passive:false});
+  $('#previewPane').addEventListener('wheel',e=>{if(!e.ctrlKey&&!e.metaKey)return;e.preventDefault();zoomCurrent(Math.exp(e.deltaY*.0015))},{passive:false});
+  stage.addEventListener('contextmenu',e=>e.preventDefault());
+  window.addEventListener('resize',()=>{if(state.fitCamera)fitView();paintSimulation()});
+  window.addEventListener('keydown',e=>{
+    const input=/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName);if(e.code==='Space'&&!input){state.spaceDown=true;e.preventDefault()}if(input)return;
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo();return}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();redo();return}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='d'){e.preventDefault();duplicateSelection();return}
+    if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();deleteSelection();return}if(e.key==='Escape'){state.gesture=null;state.drawPreview=null;selectTool('select');renderOverlay();$$('.modal-backdrop').forEach(m=>m.hidden=true);return}
+    const map={v:'select',n:'node',h:'pan',r:'rect',e:'ellipse',l:'line',p:'pen',s:'star',g:'polygon',t:'text',i:'image',b:'bridge'};if(map[e.key.toLowerCase()])selectTool(map[e.key.toLowerCase()]);
+    if(e.key==='+'||e.key==='=')zoomCurrent(.8);if(e.key==='-')zoomCurrent(1.25);if(e.key==='0')fitCurrent();
+    if(state.selection.length&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();const d=e.shiftKey?5:.5,dx=e.key==='ArrowLeft'?-d:e.key==='ArrowRight'?d:0,dy=e.key==='ArrowUp'?-d:e.key==='ArrowDown'?d:0;mutate('Nudge objects',()=>state.selection.forEach(id=>{const o=state.objects.find(x=>x.id===id);o.x+=dx;o.y+=dy}))}
+  });
+  window.addEventListener('keyup',e=>{if(e.code==='Space'){state.spaceDown=false;editorSvg.style.cursor=state.tool==='pan'?'grab':state.tool==='select'?'default':'crosshair'}});
+
+  $$('.toolbtn[data-tool]').forEach(b=>b.addEventListener('click',()=>selectTool(b.dataset.tool)));$('#duplicateTool').onclick=duplicateSelection;$('#deleteTool').onclick=deleteSelection;
+  $('#undoBtn').onclick=undo;$('#redoBtn').onclick=redo;$('#zoomInBtn').onclick=()=>zoomCurrent(.8);$('#zoomOutBtn').onclick=()=>zoomCurrent(1.25);$('#fitBtn').onclick=fitCurrent;
+  $('#gridBtn').onclick=()=>{state.showGrid=!state.showGrid;$('#gridBtn').classList.toggle('active',state.showGrid);renderAll()};$('#snapBtn').onclick=()=>{state.snap=!state.snap;$('#snapBtn').classList.toggle('active',state.snap);toast(`Grid snapping <b>${state.snap?'on':'off'}</b>.`,'good',1600)};
+  $$('[data-align]').forEach(b=>b.addEventListener('click',()=>alignSelection(b.dataset.align)));$$('[data-view]').forEach(b=>b.addEventListener('click',()=>setWorkspaceView(b.dataset.view)));$$('.side-tabs button').forEach(b=>b.addEventListener('click',()=>setSideTab(b.dataset.side)));
+  $$('[data-sim-mode]').forEach(b=>b.addEventListener('click',()=>{state.simMode=b.dataset.simMode;$$('[data-sim-mode]').forEach(x=>x.classList.toggle('active',x===b));paintSimulation()}));
+  $$('[data-close]').forEach(b=>b.addEventListener('click',()=>hideModal(b.dataset.close)));$$('.modal-backdrop').forEach(m=>m.addEventListener('pointerdown',e=>{if(e.target===m)hideModal(m.id)}));
+  $('#projectName').addEventListener('change',e=>{const before=snapshot();state.name=e.target.value.trim()||'Untitled Design';e.target.value=state.name;pushUndo(before,'Rename project');renderAll()});
+  $('#newBtn').onclick=()=>{if(state.objects.length&&!confirm('Start a new blank design? Your current project can be exported first.'))return;mutate('New design',()=>{state.name='Untitled Design';state.doc={w:120,h:120,material:'Basswood',thickness:3,kerf:.15,grid:5};state.objects=[];state.selection=[];$('#projectName').value=state.name});fitView()};
+  $('#openBtn').onclick=()=>$('#fileInput').click();$('#fileInput').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{await openFile(f)}catch(err){toast(`<b>Could not open file.</b> ${esc(err.message)}`,'bad',5200)}e.target.value=''});
+  $('#exportBtn').onclick=openExport;$('#downloadSvgBtn').onclick=()=>{if(!state.objects.some(o=>o.visible!==false&&o.type!=='bridge')){toast('<b>Nothing to export.</b> Add an engraving or cut object first.','bad');return}const name=safeFilename($('#exportFilename').value,'.svg');downloadText(exportSVGString(),name,'image/svg+xml');if($('#projectSwitch').classList.contains('on'))downloadText(projectJSON(),name.replace(/\.svg$/i,'.cutcraft'),'application/json');hideModal('exportModal');state.dirty=false;setSaveStatus('SVG downloaded');toast('<b>Laser-ready SVG downloaded.</b> Import it into LDS as Vector Format.','good',4200)};
+  $('#generateBtn').onclick=()=>{renderTemplateCatalog();showModal('generatorModal')};$('#templateSearch').addEventListener('input',renderTemplateCatalog);$('#templateCategory').addEventListener('change',renderTemplateCatalog);
+  $('#replaceSwitch').onclick=()=>{state.replaceOnGenerate=!state.replaceOnGenerate;$('#replaceSwitch').classList.toggle('on',state.replaceOnGenerate);$('#replaceSwitch').setAttribute('aria-checked',state.replaceOnGenerate)};
+  $('#projectSwitch').onclick=()=>{$('#projectSwitch').classList.toggle('on');$('#projectSwitch').setAttribute('aria-checked',$('#projectSwitch').classList.contains('on'))};
+  $('#createTemplateBtn').onclick=()=>{const list=generateTemplate(state.selectedTemplate,$('#genText').value,$('#genSize').value),meta=TEMPLATE_CATALOG.find(t=>t.id===state.selectedTemplate);if(!list.length){toast('<b>Template could not be generated.</b> Choose another starting design.','bad');return}addObjects(list,'Generate '+state.selectedTemplate,state.replaceOnGenerate);hideModal('generatorModal');setWorkspaceView('design');toast(`<b>${esc(meta?.name||state.selectedTemplate)} generated.</b> Every element remains editable.`)};
+  $$('[data-quick]').forEach(b=>b.addEventListener('click',()=>{state.selectedTemplate=b.dataset.quick;renderTemplateCatalog();showModal('generatorModal')}));
+  $('#newTextValue').addEventListener('input',updateTextPreview);$('#newTextFont').addEventListener('change',updateTextPreview);$('#newTextOperation').addEventListener('change',()=>{if($('#newTextOperation').value==='cut')setTextAutoStencil(true)});$$('[data-stencil-choice]').forEach(b=>b.addEventListener('click',()=>setTextAutoStencil(b.dataset.stencilChoice==='auto')));
+  $('#addTextBtn').onclick=()=>{const text=$('#newTextValue').value||'TEXT',font=$('#newTextFont').value,op=$('#newTextOperation').value,h=clamp(Number($('#newTextHeight').value)||16,3,200),o=textObject(text,state.textPoint.x,state.textPoint.y,h,font,op,state.textAutoStencil);o.stencilBridge=clamp(Number($('#newStencilBridge').value)||1.5,.3,10);o.bridgeDirection=$('#newStencilDirection').value;if(o.x+o.w>state.doc.w)o.x=Math.max(0,state.doc.w-o.w);if(o.y+o.h>state.doc.h)o.y=Math.max(0,state.doc.h-o.h);mutate('Add outlined text',()=>{state.objects.push(o);state.selection=[o.id]});hideModal('textModal');selectTool('select');if(op==='cut'&&!o.autoStencil&&/[ABDOPQR04689]/i.test(text))toast('<b>Cut-text warning:</b> enclosed centers may fall out. Turn on automatic counter bridges or add green manual bridges, then check Material preview.','warn',6000);else toast(`<b>Outlined text added.</b>${o.autoStencil?' Enclosed counters have adjustable holding bridges.':''} It exports as paths, never a text box.`,'good',4500)};
+
+  $('#traceDrop').addEventListener('click',()=>$('#traceImageInput').click());$('#traceDrop').addEventListener('dragover',e=>{e.preventDefault();$('#traceDrop').classList.add('drag')});$('#traceDrop').addEventListener('dragleave',()=>$('#traceDrop').classList.remove('drag'));$('#traceDrop').addEventListener('drop',async e=>{e.preventDefault();$('#traceDrop').classList.remove('drag');try{await loadTraceImage(e.dataTransfer.files[0])}catch(err){toast(`<b>Could not load image.</b> ${esc(err.message)}`,'bad',5000)}});$('#traceImageInput').addEventListener('change',async e=>{try{if(e.target.files[0])await loadTraceImage(e.target.files[0])}catch(err){toast(`<b>Could not load image.</b> ${esc(err.message)}`,'bad',5000)}e.target.value=''});
+  $$('[data-trace-mode]').forEach(b=>b.addEventListener('click',()=>{state.traceMode=b.dataset.traceMode;$$('[data-trace-mode]').forEach(x=>x.classList.toggle('active',x===b));$('#traceOperation').value=state.traceMode==='silhouette'?'cut':'engrave';scheduleTrace()}));[['traceThreshold','thresholdReadout'],['traceSmooth','smoothReadout'],['traceSpeckle','speckleReadout'],['traceDetail','detailReadout']].forEach(([id,out])=>$('#'+id).addEventListener('input',()=>{$('#'+out).textContent=$('#'+id).value;scheduleTrace()}));$('#traceInvert').addEventListener('click',()=>{state.traceInvert=!state.traceInvert;$('#traceInvert').classList.toggle('on',state.traceInvert);$('#traceInvert').setAttribute('aria-checked',state.traceInvert);scheduleTrace()});$('#addTraceBtn').onclick=addTraceToCanvas;
+
+  // Initialization
+  loadAutosave();renderTemplateCatalog();updateTextPreview();$('#gridBtn').classList.toggle('active',state.showGrid);$('#snapBtn').classList.toggle('active',state.snap);renderAll();requestAnimationFrame(()=>fitView());
+  window.CutCraft={state,templates:TEMPLATE_CATALOG,exportSVG:exportSVGString,runPreflight,generateTemplate,traceBinaryMask,autoStencilMask,vectorObject,processTraceDraft,textObject};
+})();
+</script>
 </body>
 </html>
